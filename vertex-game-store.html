@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>VERTEX — Digital Game Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#05060a;
+  --bg-2:#080a10;
+  --surface:#0b0d14;
+  --card:#0f1119;
+  --card-hi:#151827;
+  --border:rgba(255,255,255,.07);
+  --border-hi:rgba(255,255,255,.14);
+  --red:#e5092f;
+  --red-dim:#8a0c22;
+  --blue:#0066ff;
+  --blue-dim:#0a3d99;
+  --violet:#7b2cff;
+  --text:#eef0f5;
+  --muted:#868c9c;
+  --muted-2:#565c6d;
+  --font-d:'Unbounded',sans-serif;
+  --font-b:'Manrope',sans-serif;
+  --font-m:'JetBrains Mono',monospace;
+  --ease:cubic-bezier(.16,.8,.24,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+svg{width:16px;height:16px;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-b);
+  overflow-x:hidden;
+  cursor:none;
+  min-height:100vh;
+  position:relative;
+}
+::selection{background:var(--red);color:#fff;}
+::-webkit-scrollbar{width:9px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--red),var(--blue));border-radius:0;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;border:none;cursor:pointer;background:none;color:inherit;}
+img{display:block;max-width:100%;}
+h1,h2,h3,h4{font-family:var(--font-d);font-weight:700;letter-spacing:-0.01em;line-height:1.05;}
+.hidden{display:none !important;}
+.noscroll{overflow:hidden;}
+
+/* ============ CUSTOM CURSOR ============ */
+@media(hover:hover) and (pointer:fine){
+  .cursor-dot{
+    position:fixed;top:0;left:0;width:8px;height:8px;border-radius:50%;
+    background:var(--text);pointer-events:none;z-index:9999;
+    transform:translate(-50%,-50%);
+    transition:width .18s var(--ease),height .18s var(--ease),background .18s var(--ease);
+  }
+  .cursor-ring{
+    position:fixed;top:0;left:0;width:34px;height:34px;border-radius:50%;
+    border:1px solid var(--border-hi);pointer-events:none;z-index:9998;
+    transform:translate(-50%,-50%);
+    transition:width .22s var(--ease),height .22s var(--ease),border-color .22s var(--ease),box-shadow .22s var(--ease);
+    box-shadow:0 0 0 0 rgba(229,9,47,0);
+  }
+  .cursor-ring.active{
+    width:54px;height:54px;
+    border-color:var(--red);
+    box-shadow:0 0 22px -2px rgba(229,9,47,.55), 0 0 0 1px rgba(0,102,255,.25) inset;
+  }
+  .cursor-dot.active{width:5px;height:5px;background:var(--red);}
+}
+@media(hover:none),(pointer:coarse){ body{cursor:auto;} .cursor-dot,.cursor-ring{display:none;} }
+
+/* ============ BACKGROUND FIELD ============ */
+.bg-field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.bg-grid{
+  position:absolute;inset:-2px;
+  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+                    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  background-size:46px 46px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 40%,transparent 85%);
+}
+.bg-glow-r{position:absolute;top:-10%;left:-8%;width:60vw;height:60vw;background:radial-gradient(circle,rgba(229,9,47,.14),transparent 65%);filter:blur(10px);}
+.bg-glow-b{position:absolute;top:10%;right:-12%;width:55vw;height:55vw;background:radial-gradient(circle,rgba(0,102,255,.13),transparent 65%);filter:blur(10px);}
+.bg-noise{position:absolute;inset:0;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+.bg-scan{position:absolute;inset:0;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.02) 0px,rgba(255,255,255,.02) 1px,transparent 1px,transparent 3px);opacity:.4;}
+
+/* ============ INTRO OVERLAY ============ */
+#intro{
+  position:fixed;inset:0;background:#000;z-index:10000;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+}
+#intro .line{position:absolute;left:0;right:0;height:1px;opacity:0;}
+#intro .line-r{background:var(--red);top:46%;box-shadow:0 0 12px 1px var(--red);}
+#intro .line-b{background:var(--blue);top:54%;box-shadow:0 0 12px 1px var(--blue);}
+#intro .icube{width:90px;height:90px;position:relative;opacity:0;transform:scale(.7) rotate(8deg);}
+#intro .icube::before,#intro .icube::after{content:'';position:absolute;inset:0;border:1.5px solid var(--red);}
+#intro .icube::after{border-color:var(--blue);transform:translate(4px,4px);}
+#intro .ilogo{font-family:var(--font-d);font-weight:800;font-size:15px;letter-spacing:.5em;margin-top:26px;opacity:0;padding-left:.5em;}
+#intro .itag{font-family:var(--font-m);font-size:11px;letter-spacing:.3em;color:var(--muted);margin-top:10px;opacity:0;}
+
+/* ============ NAVBAR ============ */
+header#nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px clamp(18px,4vw,48px);
+  transition:background .4s var(--ease),border-color .4s var(--ease),backdrop-filter .4s var(--ease),padding .3s var(--ease);
+  border-bottom:1px solid transparent;
+}
+header#nav.scrolled{
+  background:rgba(6,7,11,.78);
+  backdrop-filter:blur(16px) saturate(140%);
+  border-bottom:1px solid var(--border);
+  padding-top:12px;padding-bottom:12px;
+  box-shadow:0 1px 40px -10px rgba(229,9,47,.15);
+}
+.nav-left{display:flex;align-items:center;gap:46px;}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-d);font-weight:800;font-size:19px;letter-spacing:.06em;}
+.brand-mark{width:22px;height:22px;position:relative;flex-shrink:0;}
+.brand-mark span{position:absolute;inset:0;border:2px solid var(--red);}
+.brand-mark span:last-child{border-color:var(--blue);transform:translate(3px,3px);}
+.nav-menu{display:flex;gap:32px;list-style:none;}
+.nav-menu button{font-size:13.5px;color:var(--muted);position:relative;padding:4px 0;font-weight:500;transition:color .25s;}
+.nav-menu button::after{content:'';position:absolute;left:0;bottom:-2px;width:0;height:1px;background:linear-gradient(90deg,var(--red),var(--blue));transition:width .3s var(--ease);}
+.nav-menu button:hover,.nav-menu button.active-link{color:var(--text);}
+.nav-menu button:hover::after,.nav-menu button.active-link::after{width:100%;}
+.nav-right{display:flex;align-items:center;gap:6px;}
+.icon-btn{position:relative;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:2px;color:var(--muted);transition:color .2s,background .2s;}
+.icon-btn:hover{color:var(--text);background:rgba(255,255,255,.05);}
+.icon-btn svg{width:19px;height:19px;}
+.badge{position:absolute;top:2px;right:2px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--font-m);}
+.lang-switch{position:relative;}
+.lang-btn{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:12px;font-weight:600;color:var(--text);padding:8px 10px;border:1px solid var(--border);letter-spacing:.05em;}
+.lang-btn:hover{border-color:var(--border-hi);}
+.lang-menu{position:absolute;top:calc(100% + 10px);right:0;background:var(--surface);border:1px solid var(--border-hi);min-width:150px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:all .2s var(--ease);box-shadow:0 20px 60px -12px rgba(0,0,0,.7);}
+.lang-menu.open{opacity:1;visibility:visible;transform:translateY(0);}
+.lang-menu button{display:flex;justify-content:space-between;width:100%;padding:10px 14px;font-size:13px;color:var(--muted);}
+.lang-menu button:hover{background:rgba(255,255,255,.04);color:var(--text);}
+.lang-menu button.on{color:var(--red);}
+.lang-code{font-family:var(--font-m);font-size:11px;color:var(--muted-2);}
+.burger{display:none;width:38px;height:38px;align-items:center;justify-content:center;color:var(--text);}
+
+/* search overlay */
+.search-wrap{position:relative;}
+.search-panel{
+  position:fixed;top:0;left:0;right:0;background:rgba(5,6,10,.97);backdrop-filter:blur(20px);
+  z-index:600;padding:100px 24px 40px;opacity:0;visibility:hidden;transform:translateY(-12px);
+  transition:all .28s var(--ease);border-bottom:1px solid var(--border-hi);
+}
+.search-panel.open{opacity:1;visibility:visible;transform:translateY(0);}
+.search-inner{max-width:720px;margin:0 auto;}
+.search-input-row{display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border-hi);padding-bottom:16px;}
+.search-input-row svg{width:22px;height:22px;color:var(--muted);flex-shrink:0;}
+#searchInput{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--font-d);font-size:22px;font-weight:600;}
+#searchInput::placeholder{color:var(--muted-2);}
+.search-close{width:32px;height:32px;color:var(--muted);flex-shrink:0;}
+.search-close svg{width:22px;height:22px;}
+.search-results{margin-top:22px;display:flex;flex-direction:column;gap:2px;max-height:56vh;overflow-y:auto;}
+.search-row{display:flex;align-items:center;gap:14px;padding:10px;transition:background .18s;border-radius:2px;}
+.search-row:hover{background:rgba(255,255,255,.05);}
+.search-row .cover-mini{width:52px;height:52px;flex-shrink:0;}
+.search-row .info{flex:1;min-width:0;}
+.search-row .info .t{font-family:var(--font-d);font-weight:600;font-size:14px;}
+.search-row .info .g{font-size:11.5px;color:var(--muted);font-family:var(--font-m);margin-top:2px;}
+.search-row .price{font-family:var(--font-m);font-weight:600;font-size:13px;}
+.search-empty{color:var(--muted);font-size:13px;padding:20px 10px;text-align:center;}
+
+/* ============ MAIN LAYOUT ============ */
+main{position:relative;z-index:1;}
+.section{padding:96px clamp(18px,4vw,48px);max-width:1480px;margin:0 auto;}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:38px;gap:20px;flex-wrap:wrap;}
+.section-head h2{font-size:clamp(26px,3.2vw,38px);}
+.section-sub{color:var(--muted);font-size:13.5px;margin-top:8px;max-width:480px;}
+.section-idx{font-family:var(--font-m);font-size:12px;color:var(--muted-2);letter-spacing:.15em;}
+.view-all{font-size:12.5px;font-family:var(--font-m);color:var(--muted);display:flex;align-items:center;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--border-hi);transition:color .2s,border-color .2s;}
+.view-all:hover{color:var(--text);border-color:var(--red);}
+
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .8s var(--ease),filter .8s var(--ease);filter:blur(4px);}
+.reveal.in{opacity:1;transform:translateY(0);filter:blur(0);}
+.reveal-l{opacity:0;transform:translateX(-32px);transition:opacity .8s var(--ease),transform .8s var(--ease);}
+.reveal-l.in{opacity:1;transform:translateX(0);}
+.reveal-scale{opacity:0;transform:scale(.92);transition:opacity .7s var(--ease),transform .7s var(--ease);}
+.reveal-scale.in{opacity:1;transform:scale(1);}
+
+/* ============ HERO ============ */
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:140px clamp(18px,4vw,48px) 60px;max-width:1600px;margin:0 auto;
+  gap:40px;position:relative;
+}
+.hero-grid{display:grid;grid-template-columns:1.05fr 1fr;align-items:center;gap:20px;width:100%;}
+.hero-eyebrow{display:flex;align-items:center;gap:12px;margin-bottom:22px;}
+.hero-eyebrow .dot{width:7px;height:7px;background:var(--red);border-radius:50%;box-shadow:0 0 10px 2px rgba(229,9,47,.7);animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hero-eyebrow span{font-family:var(--font-m);font-size:11.5px;letter-spacing:.25em;color:var(--muted);}
+.hero h1{font-size:clamp(40px,5.6vw,74px);line-height:.98;}
+.hero h1 .lr{color:var(--red);}
+.hero h1 .lb{color:var(--blue);}
+.hero-desc{margin-top:22px;color:var(--muted);font-size:15.5px;max-width:440px;line-height:1.65;}
+.hero-cta-row{display:flex;gap:14px;margin-top:38px;flex-wrap:wrap;}
+.btn-primary{
+  position:relative;overflow:hidden;padding:16px 30px;background:var(--text);color:#050608;
+  font-weight:700;font-size:13.5px;letter-spacing:.03em;display:flex;align-items:center;gap:10px;
+  clip-path:polygon(0 0,100% 0,100% 70%,94% 100%,0 100%);
+  transition:transform .25s var(--ease);
+}
+.btn-primary:hover{transform:translateY(-2px);}
+.btn-primary svg{width:15px;height:15px;transition:transform .25s var(--ease);}
+.btn-primary:hover svg{transform:translateX(3px);}
+.btn-ghost{
+  padding:16px 26px;border:1px solid var(--border-hi);font-weight:600;font-size:13.5px;color:var(--text);
+  display:flex;align-items:center;gap:10px;transition:border-color .25s,background .25s;
+}
+.btn-ghost:hover{border-color:var(--red);background:rgba(229,9,47,.06);}
+.hero-stats{display:flex;gap:34px;margin-top:52px;}
+.hero-stats div{border-left:1px solid var(--border-hi);padding-left:14px;}
+.hero-stats .n{font-family:var(--font-d);font-weight:700;font-size:22px;}
+.hero-stats .l{font-size:11px;color:var(--muted);font-family:var(--font-m);margin-top:3px;}
+
+.cube-stage{position:relative;height:min(560px,60vh);display:flex;align-items:center;justify-content:center;}
+#cubeCanvas{width:100%;height:100%;touch-action:none;cursor:grab;}
+#cubeCanvas:active{cursor:grabbing;}
+.cube-hint{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-family:var(--font-m);font-size:10.5px;color:var(--muted-2);letter-spacing:.15em;display:flex;align-items:center;gap:8px;}
+.cube-facelabel{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-d);font-weight:700;font-size:13px;padding:7px 16px;
+  background:rgba(10,11,16,.7);backdrop-filter:blur(6px);border:1px solid var(--border-hi);
+  opacity:0;transition:opacity .25s;pointer-events:none;letter-spacing:.02em;white-space:nowrap;
+}
+.cube-facelabel.show{opacity:1;}
+
+/* ============ CATEGORIES STRIP ============ */
+.cat-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:var(--border);border:1px solid var(--border);}
+.cat-cell{
+  position:relative;aspect-ratio:4/3;background:var(--card);overflow:hidden;display:flex;align-items:flex-end;padding:16px;
+  transition:background .3s;
+}
+.cat-cell .catbg{position:absolute;inset:0;opacity:0;transition:opacity .4s var(--ease),transform .5s var(--ease);transform:scale(1.15);}
+.cat-cell:hover .catbg{opacity:1;transform:scale(1);}
+.cat-cell::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.85));z-index:1;}
+.cat-cell span{position:relative;z-index:2;font-family:var(--font-d);font-weight:700;font-size:14.5px;transition:transform .25s var(--ease),color .25s;}
+.cat-cell span::after{content:'';display:block;width:0;height:2px;background:linear-gradient(90deg,var(--red),var(--blue));margin-top:6px;transition:width .3s var(--ease);}
+.cat-cell:hover span{transform:translateX(4px);}
+.cat-cell:hover span::after{width:32px;}
+.cat-count{position:relative;z-index:2;font-family:var(--font-m);font-size:10px;color:var(--muted);margin-left:auto;}
+
+/* ============ STORE BENTO GRID ============ */
+.bento{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;align-items:start;}
+.card{
+  position:relative;background:var(--card);border:1px solid var(--border);overflow:hidden;
+  transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .35s var(--ease);
+  display:flex;flex-direction:column;
+}
+.card:hover{border-color:var(--border-hi);box-shadow:0 24px 50px -20px rgba(229,9,47,.25),0 24px 50px -24px rgba(0,102,255,.2);}
+.card .cover{position:relative;overflow:hidden;flex-shrink:0;}
+.card .cover canvas,.card .cover .coverfallback{width:100%;height:100%;display:block;transition:transform .55s var(--ease);}
+.card:hover .cover canvas,.card:hover .cover .coverfallback{transform:scale(1.07);}
+.card .cover::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(6,7,11,.92));}
+.card-glitch{position:absolute;inset:0;opacity:0;mix-blend-mode:screen;pointer-events:none;background:linear-gradient(90deg,rgba(229,9,47,.35),transparent 8%,transparent 92%,rgba(0,102,255,.35));transition:opacity .18s;}
+.card:hover .card-glitch{opacity:1;animation:glitchflick .5s steps(2) 1;}
+@keyframes glitchflick{0%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(2px)}75%{transform:translateX(-1px)}100%{transform:translateX(0)}}
+.badge-row{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;z-index:3;pointer-events:none;}
+.discount-tag{background:var(--red);color:#fff;font-family:var(--font-m);font-weight:700;font-size:11px;padding:4px 8px;}
+.rating-tag{background:rgba(6,7,11,.75);backdrop-filter:blur(4px);border:1px solid var(--border-hi);font-family:var(--font-m);font-size:11px;padding:4px 8px;display:flex;align-items:center;gap:4px;}
+.rating-tag svg{width:10px;height:10px;fill:var(--blue);}
+.fav-btn{position:absolute;bottom:10px;right:10px;z-index:3;width:32px;height:32px;background:rgba(6,7,11,.72);backdrop-filter:blur(4px);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;color:var(--muted);opacity:0;transform:translateY(6px);transition:all .25s var(--ease);}
+.card:hover .fav-btn{opacity:1;transform:translateY(0);}
+.fav-btn svg{width:14px;height:14px;}
+.fav-btn.on{color:var(--red);border-color:var(--red);}
+.card-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1;}
+.card-genre{font-family:var(--font-m);font-size:10.5px;color:var(--muted);letter-spacing:.08em;}
+.card-title{font-family:var(--font-d);font-weight:700;font-size:15px;line-height:1.2;}
+.card-platforms{display:flex;gap:6px;color:var(--muted-2);}
+.card-platforms svg{width:14px;height:14px;}
+.card-price-row{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:10px;}
+.price-now{font-family:var(--font-m);font-weight:700;font-size:15px;}
+.price-old{font-family:var(--font-m);font-size:11.5px;color:var(--muted-2);text-decoration:line-through;margin-right:6px;}
+.price-free{font-family:var(--font-m);font-weight:700;font-size:13px;color:var(--blue);}
+.quickview{width:30px;height:30px;border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s;}
+.quickview:hover{background:var(--red);border-color:var(--red);}
+.quickview svg{width:13px;height:13px;}
+
+/* card size variants — column spans are grouped to sum to 12 per row */
+.card.size-xl{grid-column:span 7;flex-direction:row;}
+.card.size-xl .cover{width:56%;height:420px;flex-shrink:0;}
+.card.size-xl .card-body{width:44%;padding:24px;justify-content:space-between;gap:12px;}
+.card.size-xl .card-title{font-size:23px;}
+.card.size-xl .cover::after{background:linear-gradient(90deg,transparent 60%,rgba(6,7,11,.95));}
+.card.size-lg{grid-column:span 5;}
+.card.size-lg .cover{height:420px;}
+.card.size-md{grid-column:span 4;}
+.card.size-md .cover{height:220px;}
+.card.size-wide{grid-column:span 12;flex-direction:row;}
+.card.size-wide .cover{width:260px;height:230px;flex-shrink:0;}
+.card.size-wide .card-body{flex:1;justify-content:center;}
+.card.size-sm{grid-column:span 3;}
+.card.size-sm .cover{height:220px;}
+@media(max-width:1100px){
+  .card.size-xl{grid-column:span 12;}
+  .card.size-lg{grid-column:span 12;}
+  .card.size-md{grid-column:span 6;}
+  .card.size-wide{grid-column:span 12;}
+  .card.size-sm{grid-column:span 6;}
+  .card.size-xl .cover{height:320px;}
+  .card.size-lg .cover{height:320px;}
+}
+@media(max-width:640px){
+  .card.size-xl,.card.size-wide{flex-direction:column;}
+  .card.size-xl .cover,.card.size-wide .cover{width:100%;height:210px;}
+  .card.size-xl .card-body{width:100%;}
+  .card.size-lg,.card.size-md,.card.size-sm{grid-column:span 12;}
+}
+
+/* ============ DEALS ============ */
+.deals-strip{display:flex;gap:16px;overflow-x:auto;padding-bottom:14px;scrollbar-width:none;}
+.deals-strip::-webkit-scrollbar{display:none;}
+.deal-card{
+  flex:0 0 260px;background:var(--card);border:1px solid var(--border);position:relative;
+  transition:transform .3s var(--ease),border-color .3s;
+}
+.deal-card:hover{transform:translateY(-6px);border-color:var(--red);}
+.deal-card .cover{height:150px;position:relative;}
+.deal-pct{position:absolute;top:10px;left:0;background:var(--red);color:#fff;font-family:var(--font-d);font-weight:800;font-size:15px;padding:6px 12px 6px 8px;clip-path:polygon(0 0,100% 0,88% 100%,0 100%);}
+.deal-body{padding:14px;}
+.deal-title{font-family:var(--font-d);font-weight:700;font-size:14px;}
+.deal-prices{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.deal-timer{margin-top:10px;display:flex;gap:6px;font-family:var(--font-m);font-size:11px;color:var(--muted);}
+.deal-timer b{color:var(--text);background:rgba(255,255,255,.06);padding:2px 5px;}
+
+/* ============ LIBRARY / FAVORITES ============ */
+.lib-row{display:flex;align-items:center;gap:18px;padding:14px 16px;background:var(--card);border:1px solid var(--border);margin-bottom:8px;transition:border-color .2s,background .2s;}
+.lib-row:hover{border-color:var(--border-hi);background:var(--card-hi);}
+.lib-row .cover-mini{width:64px;height:64px;flex-shrink:0;}
+.lib-info{flex:1;min-width:0;}
+.lib-title{font-family:var(--font-d);font-weight:700;font-size:14.5px;}
+.lib-meta{font-family:var(--font-m);font-size:11px;color:var(--muted);margin-top:4px;display:flex;gap:14px;flex-wrap:wrap;}
+.lib-progress{width:120px;height:3px;background:rgba(255,255,255,.08);margin-top:8px;position:relative;display:none;}
+.lib-progress i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--red),var(--blue));}
+.play-btn{padding:10px 20px;border:1px solid var(--border-hi);font-family:var(--font-d);font-weight:700;font-size:12px;letter-spacing:.04em;display:flex;align-items:center;gap:8px;transition:all .22s var(--ease);flex-shrink:0;}
+.play-btn svg{width:13px;height:13px;flex-shrink:0;}
+.play-btn:hover{background:var(--text);color:#000;border-color:var(--text);}
+.empty-state{text-align:center;padding:70px 20px;color:var(--muted);}
+.empty-state svg{width:40px;height:40px;margin-bottom:16px;color:var(--muted-2);}
+.empty-state h3{font-size:16px;margin-bottom:8px;color:var(--text);}
+.empty-state p{font-size:13px;max-width:320px;margin:0 auto;}
+.tab-row{display:flex;gap:8px;margin-bottom:28px;border-bottom:1px solid var(--border);}
+.tab-btn{padding:10px 4px;margin-right:26px;font-family:var(--font-m);font-size:12.5px;color:var(--muted);position:relative;letter-spacing:.04em;}
+.tab-btn::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--red);transform:scaleX(0);transition:transform .25s var(--ease);}
+.tab-btn.on{color:var(--text);}
+.tab-btn.on::after{transform:scaleX(1);}
+
+/* ============ PROFILE ============ */
+.profile-head{display:flex;gap:24px;align-items:center;margin-bottom:40px;flex-wrap:wrap;}
+.avatar{width:88px;height:88px;background:linear-gradient(135deg,var(--red),var(--violet),var(--blue));display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:800;font-size:30px;flex-shrink:0;position:relative;}
+.avatar::after{content:'';position:absolute;inset:3px;background:var(--bg);display:flex;}
+.avatar b{position:relative;z-index:1;}
+.profile-stats{display:flex;gap:36px;flex-wrap:wrap;}
+.pstat .n{font-family:var(--font-d);font-weight:700;font-size:24px;}
+.pstat .l{font-family:var(--font-m);font-size:10.5px;color:var(--muted);margin-top:2px;letter-spacing:.06em;}
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.ach-card{background:var(--card);border:1px solid var(--border);padding:16px;display:flex;gap:14px;align-items:center;}
+.ach-card.locked{opacity:.4;}
+.ach-icon{width:42px;height:42px;flex-shrink:0;border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);}
+.ach-icon svg{width:20px;height:20px;color:var(--blue);}
+.ach-card.locked .ach-icon svg{color:var(--muted-2);}
+.ach-name{font-family:var(--font-d);font-weight:700;font-size:13px;}
+.ach-desc{font-size:11.5px;color:var(--muted);margin-top:3px;}
+
+/* ============ GAME DETAIL VIEW ============ */
+#gameView{position:fixed;inset:0;z-index:800;background:var(--bg);overflow-y:auto;transform:translateY(100%);transition:transform .5s var(--ease);}
+#gameView.open{transform:translateY(0);}
+.gv-hero{position:relative;height:52vh;min-height:340px;overflow:hidden;}
+.gv-hero canvas,.gv-hero .coverfallback{width:100%;height:100%;object-fit:cover;}
+.gv-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,6,10,.2) 0%,rgba(5,6,10,.5) 55%,var(--bg) 100%);}
+.gv-close{position:absolute;top:22px;right:24px;z-index:5;width:42px;height:42px;background:rgba(6,7,11,.6);backdrop-filter:blur(6px);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;}
+.gv-close svg{width:18px;height:18px;}
+.gv-back{position:absolute;top:22px;left:24px;z-index:5;display:flex;align-items:center;gap:8px;font-family:var(--font-m);font-size:12px;color:var(--muted);background:rgba(6,7,11,.6);backdrop-filter:blur(6px);border:1px solid var(--border-hi);padding:10px 14px;}
+.gv-back svg{width:16px;height:16px;flex-shrink:0;}
+.gv-titlewrap{position:absolute;bottom:0;left:0;right:0;padding:0 clamp(18px,4vw,48px) 34px;max-width:1480px;margin:0 auto;}
+.gv-genre-tag{font-family:var(--font-m);font-size:11px;color:var(--blue);letter-spacing:.1em;margin-bottom:10px;}
+.gv-title{font-size:clamp(30px,4.4vw,52px);}
+.gv-body{max-width:1480px;margin:0 auto;padding:44px clamp(18px,4vw,48px) 100px;display:grid;grid-template-columns:1fr 340px;gap:56px;}
+.gv-meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px 30px;margin:30px 0 40px;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.gv-meta-item .l{font-family:var(--font-m);font-size:10.5px;color:var(--muted-2);letter-spacing:.1em;margin-bottom:5px;}
+.gv-meta-item .v{font-size:14px;font-weight:600;}
+.gv-desc{color:var(--muted);line-height:1.75;font-size:14.5px;max-width:620px;}
+.gv-h3{font-size:20px;margin:44px 0 18px;}
+.gv-gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.gv-gallery .shot{aspect-ratio:16/9;overflow:hidden;cursor:pointer;position:relative;}
+.gv-gallery .shot canvas{width:100%;height:100%;transition:transform .3s var(--ease);}
+.gv-gallery .shot:hover canvas{transform:scale(1.08);}
+.gv-gallery .shot::after{content:'';position:absolute;inset:0;border:1px solid var(--border);}
+.trailer-btn{display:flex;align-items:center;gap:14px;padding:18px 26px;border:1px solid var(--border-hi);width:fit-content;margin-top:10px;transition:all .25s var(--ease);}
+.trailer-btn:hover{border-color:var(--red);background:rgba(229,9,47,.06);}
+.trailer-btn .playcircle{width:38px;height:38px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.trailer-btn .playcircle svg{width:14px;height:14px;fill:#fff;margin-left:2px;}
+.trailer-btn span{font-family:var(--font-d);font-weight:700;font-size:13px;letter-spacing:.02em;}
+.sysreq{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:10px;}
+.sysreq h4{font-family:var(--font-m);font-size:11.5px;color:var(--blue);letter-spacing:.08em;margin-bottom:12px;}
+.sysreq ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.sysreq li{font-size:12.5px;color:var(--muted);display:flex;gap:8px;}
+.sysreq li b{color:var(--text);font-weight:600;min-width:70px;}
+
+.buy-card{background:var(--card);border:1px solid var(--border);padding:26px;position:sticky;top:100px;height:fit-content;}
+.buy-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;}
+.buy-new{font-family:var(--font-d);font-weight:800;font-size:32px;}
+.buy-old{font-family:var(--font-m);font-size:15px;color:var(--muted-2);text-decoration:line-through;}
+.buy-disc{display:inline-block;background:var(--red);color:#fff;font-family:var(--font-m);font-weight:700;font-size:11.5px;padding:3px 8px;margin-bottom:14px;}
+.buy-demo-note{font-size:11px;color:var(--muted-2);margin-bottom:18px;line-height:1.5;}
+.btn-buy{width:100%;padding:17px;background:var(--text);color:#050608;font-family:var(--font-d);font-weight:700;font-size:14px;letter-spacing:.02em;margin-bottom:10px;transition:transform .2s var(--ease),background .2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.btn-buy:hover{transform:translateY(-2px);}
+.btn-buy:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-buy.owned{background:transparent;color:var(--blue);border:1px solid var(--blue);}
+.btn-sec{width:100%;padding:14px;border:1px solid var(--border-hi);font-weight:600;font-size:13px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .2s var(--ease);}
+.btn-sec svg{width:16px;height:16px;flex-shrink:0;}
+.btn-sec:hover{border-color:var(--red);}
+.btn-sec.on{border-color:var(--red);color:var(--red);}
+.buy-plat-row{display:flex;gap:10px;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);}
+.buy-plat-row svg{width:20px;height:20px;}
+
+/* ============ TRAILER / SHOT MODAL ============ */
+.modal-overlay{position:fixed;inset:0;background:rgba(3,4,7,.9);backdrop-filter:blur(10px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s;}
+.modal-overlay.open{opacity:1;visibility:visible;}
+.modal-box{width:min(900px,92vw);position:relative;}
+.modal-close{position:absolute;top:-46px;right:0;width:36px;height:36px;color:var(--muted);}
+.modal-close svg{width:22px;height:22px;}
+.modal-box.wide-16-9{aspect-ratio:16/9;background:#000;border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.trailer-fake{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+.trailer-fake .playcircle-lg{width:78px;height:78px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;}
+.trailer-fake .playcircle-lg svg{width:26px;height:26px;fill:#fff;margin-left:3px;}
+.trailer-fake p{font-family:var(--font-m);font-size:12px;color:var(--muted);letter-spacing:.05em;}
+.shot-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;z-index:5;}
+.shot-nav:hover{background:rgba(255,255,255,.16);}
+.shot-nav.prev{left:14px;}.shot-nav.next{right:14px;}
+.shot-nav svg{width:18px;height:18px;}
+
+/* ============ CART DRAWER ============ */
+#cartOverlay{position:fixed;inset:0;background:rgba(3,4,7,.7);backdrop-filter:blur(4px);z-index:1500;opacity:0;visibility:hidden;transition:opacity .3s;}
+#cartOverlay.open{opacity:1;visibility:visible;}
+#cartDrawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);background:var(--surface);border-left:1px solid var(--border-hi);z-index:1501;transform:translateX(100%);transition:transform .4s var(--ease);display:flex;flex-direction:column;}
+#cartDrawer.open{transform:translateX(0);}
+.cart-head{padding:22px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.cart-head h3{font-size:17px;}
+.cart-items{flex:1;overflow-y:auto;padding:14px 18px;}
+.cart-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.cart-item .cover-mini{width:56px;height:56px;flex-shrink:0;}
+.cart-item .ci-info{flex:1;min-width:0;}
+.cart-item .ci-title{font-family:var(--font-d);font-weight:700;font-size:13px;}
+.cart-item .ci-price{font-family:var(--font-m);font-size:12.5px;color:var(--muted);margin-top:6px;}
+.cart-item .ci-remove{color:var(--muted-2);width:22px;height:22px;flex-shrink:0;}
+.cart-item .ci-remove:hover{color:var(--red);}
+.cart-foot{padding:20px 24px;border-top:1px solid var(--border);}
+.cart-total-row{display:flex;justify-content:space-between;margin-bottom:16px;font-family:var(--font-m);font-size:14px;}
+.cart-total-row b{font-family:var(--font-d);font-size:19px;}
+
+/* ============ TOASTS ============ */
+#toastWrap{position:fixed;bottom:24px;right:24px;z-index:5000;display:flex;flex-direction:column;gap:10px;align-items:flex-end;}
+.toast{
+  background:var(--surface);border:1px solid var(--border-hi);border-left:3px solid var(--blue);
+  padding:14px 18px;font-size:13px;display:flex;align-items:center;gap:12px;min-width:260px;
+  box-shadow:0 20px 50px -14px rgba(0,0,0,.6);
+  animation:toastin .35s var(--ease);
+}
+.toast.err{border-left-color:var(--red);}
+@keyframes toastin{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+.toast.out{animation:toastout .3s var(--ease) forwards;}
+@keyframes toastout{to{opacity:0;transform:translateX(30px)}}
+.toast svg{width:16px;height:16px;color:var(--blue);flex-shrink:0;}
+.toast.err svg{color:var(--red);}
+
+/* ============ CHECKOUT MODAL ============ */
+.checkout-box{width:min(440px,92vw);background:var(--surface);border:1px solid var(--border-hi);padding:32px;position:relative;}
+.checkout-box h3{font-size:20px;margin-bottom:6px;}
+.checkout-box .sub{color:var(--muted);font-size:12.5px;margin-bottom:26px;}
+.co-field{margin-bottom:16px;}
+.co-field label{display:block;font-family:var(--font-m);font-size:10.5px;color:var(--muted);margin-bottom:7px;letter-spacing:.06em;}
+.co-field input{width:100%;background:var(--card);border:1px solid var(--border);padding:12px 14px;color:var(--text);font-size:13.5px;outline:none;transition:border-color .2s;}
+.co-field input:focus{border-color:var(--blue);}
+.co-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.co-total{display:flex;justify-content:space-between;padding:16px 0;border-top:1px solid var(--border);margin:8px 0 20px;font-family:var(--font-m);}
+.co-total b{font-family:var(--font-d);font-size:19px;}
+.demo-flag{display:flex;gap:10px;align-items:flex-start;background:rgba(0,102,255,.08);border:1px solid rgba(0,102,255,.25);padding:12px 14px;margin-bottom:20px;font-size:11.5px;color:var(--muted);line-height:1.5;}
+.demo-flag svg{width:16px;height:16px;color:var(--blue);flex-shrink:0;margin-top:1px;}
+.co-loading{display:none;align-items:center;justify-content:center;gap:10px;}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#050608;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.co-success{text-align:center;padding:20px 0;}
+.co-success svg{width:52px;height:52px;color:var(--blue);margin-bottom:16px;}
+
+/* ============ FOOTER ============ */
+footer{border-top:1px solid var(--border);padding:70px clamp(18px,4vw,48px) 30px;position:relative;z-index:1;}
+.footer-inner{max-width:1480px;margin:0 auto;}
+.footer-top{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:32px;padding-bottom:50px;}
+.footer-brand p{color:var(--muted);font-size:13px;margin-top:14px;max-width:280px;line-height:1.6;}
+.footer-col h5{font-family:var(--font-m);font-size:11px;letter-spacing:.1em;color:var(--muted-2);margin-bottom:16px;}
+.footer-col a{display:block;font-size:13px;color:var(--muted);margin-bottom:11px;transition:color .2s;}
+.footer-col a:hover{color:var(--text);}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:26px;border-top:1px solid var(--border);flex-wrap:wrap;gap:16px;}
+.footer-legal{font-size:12px;color:var(--muted-2);}
+.social-row{display:flex;gap:10px;}
+.social-row a{width:34px;height:34px;border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.social-row a:hover{color:var(--text);border-color:var(--red);}
+.social-row svg{width:15px;height:15px;}
+.footer-langrow{display:flex;gap:8px;margin-top:16px;}
+.footer-langrow button{font-family:var(--font-m);font-size:11px;padding:6px 10px;border:1px solid var(--border);color:var(--muted);}
+.footer-langrow button.on{color:var(--red);border-color:var(--red);}
+
+/* ============ MOBILE NAV ============ */
+.mobile-menu{position:fixed;inset:0;background:var(--bg);z-index:900;padding:100px 26px 40px;display:flex;flex-direction:column;gap:6px;transform:translateX(100%);transition:transform .4s var(--ease);overflow-y:auto;}
+.mobile-menu.open{transform:translateX(0);}
+.mobile-menu button.mm-link{text-align:left;font-family:var(--font-d);font-weight:700;font-size:24px;padding:16px 0;border-bottom:1px solid var(--border);color:var(--text);}
+.mobile-menu .mm-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;}
+.mobile-menu .mm-actions button{flex:1;min-width:130px;padding:14px;border:1px solid var(--border-hi);font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.mobile-menu .mm-actions button svg{width:18px;height:18px;flex-shrink:0;}
+.mobile-menu .mm-lang{display:flex;gap:8px;margin-top:30px;flex-wrap:wrap;}
+.mobile-menu .mm-lang button{font-family:var(--font-m);font-size:12px;padding:9px 14px;border:1px solid var(--border);color:var(--muted);}
+.mobile-menu .mm-lang button.on{color:var(--red);border-color:var(--red);}
+
+@media(max-width:900px){
+  .nav-menu,.hero-stats,.footer-top .footer-col:nth-child(4){display:none;}
+  .burger{display:flex;}
+  #btnFav,#btnLib,#btnProfile{display:none;}
+  .nav-right{gap:2px;}
+  .hero-grid{grid-template-columns:1fr;}
+  .cube-stage{height:380px;order:-1;}
+  .gv-body{grid-template-columns:1fr;}
+  .buy-card{position:static;}
+  .footer-top{grid-template-columns:1fr 1fr;}
+  .gv-meta-grid{grid-template-columns:1fr;}
+  .sysreq{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  .cat-strip{grid-template-columns:repeat(2,1fr);}
+  .section{padding:64px 18px;}
+  .footer-top{grid-template-columns:1fr;}
+  .gv-gallery{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+
+<div class="bg-field">
+  <div class="bg-grid"></div>
+  <div class="bg-glow-r"></div>
+  <div class="bg-glow-b"></div>
+  <div class="bg-noise"></div>
+  <div class="bg-scan"></div>
+</div>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="line line-r"></div>
+  <div class="line line-b"></div>
+  <div class="icube"></div>
+  <div class="ilogo">VERTEX</div>
+  <div class="itag" data-i18n="introTag">ЗАГРУЗКА ВСЕЛЕННОЙ</div>
+</div>
+
+<div id="root"></div>
+
+<div id="toastWrap"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+/* =========================================================================
+   VERTEX — data layer
+   ========================================================================= */
+const LANGS = ['ru','en','uz','zh','de'];
+const LANG_LABEL = {ru:'Русский',en:'English',uz:"O'zbek",zh:'中文',de:'Deutsch'};
+
+const T = {
+  introTag:{ru:'ЗАГРУЗКА ВСЕЛЕННОЙ',en:'LOADING THE UNIVERSE',uz:"OLAM YUKLANMOQDA",zh:'正在加载宇宙',de:'UNIVERSUM WIRD GELADEN'},
+  navHome:{ru:'Главная',en:'Home',uz:'Bosh sahifa',zh:'首页',de:'Start'},
+  navStore:{ru:'Магазин',en:'Store',uz:"Do'kon",zh:'商店',de:'Shop'},
+  navGames:{ru:'Игры',en:'Games',uz:"O'yinlar",zh:'游戏',de:'Spiele'},
+  navCategories:{ru:'Категории',en:'Categories',uz:'Toifalar',zh:'分类',de:'Kategorien'},
+  navDeals:{ru:'Скидки',en:'Deals',uz:'Chegirmalar',zh:'折扣',de:'Angebote'},
+  navCommunity:{ru:'Сообщество',en:'Community',uz:'Jamiyat',zh:'社区',de:'Community'},
+  heroEyebrow:{ru:'ЦИФРОВАЯ ИГРОВАЯ ПЛАТФОРМА',en:'DIGITAL GAME PLATFORM',uz:'RAQAMLI O‘YIN PLATFORMASI',zh:'数字游戏平台',de:'DIGITALE SPIELEPLATTFORM'},
+  heroTitle1:{ru:'ИГРА НАЧИНАЕТСЯ',en:'THE GAME BEGINS',uz:"O'YIN BOSHLANADI",zh:'游戏由此开始',de:'DAS SPIEL BEGINNT'},
+  heroTitle2:{ru:'ЗДЕСЬ',en:'HERE',uz:"SHU YERDA",zh:'就在这里',de:'HIER'},
+  heroDesc:{ru:'Более 19 000 игр, мгновенная библиотека и витрина без границ. Вращайте куб — и заходите в игру.',en:'19,000+ games, an instant library and a storefront without borders. Spin the cube — and step inside.',uz:"19 000 dan ortiq o'yin, tezkor kutubxona va chegarasiz vitrina. Kubni aylantiring — va o'yinga kiring.",zh:'超过19,000款游戏，即时游戏库，无国界商店。转动魔方，进入游戏世界。',de:'Über 19.000 Spiele, eine sofortige Bibliothek und ein grenzenloses Schaufenster. Dreh den Würfel — und steig ein.'},
+  ctaOpenStore:{ru:'ОТКРЫТЬ МАГАЗИН',en:'OPEN STORE',uz:"DO'KONNI OCHISH",zh:'打开商店',de:'SHOP ÖFFNEN'},
+  ctaExplore:{ru:'Смотреть скидки',en:'Browse deals',uz:'Chegirmalarni ko\'rish',zh:'查看折扣',de:'Angebote ansehen'},
+  heroStat1:{ru:'ИГРЫ В КАТАЛОГЕ',en:'GAMES IN CATALOG',uz:"KATALOGDAGI O'YINLAR",zh:'目录游戏数',de:'SPIELE IM KATALOG'},
+  heroStat2:{ru:'ИГРОКОВ В СЕТИ',en:'PLAYERS ONLINE',uz:'FAOL O\'YINCHILAR',zh:'在线玩家',de:'SPIELER ONLINE'},
+  heroStat3:{ru:'СРЕДНЯЯ СКИДКА',en:'AVERAGE DISCOUNT',uz:"O'RTACHA CHEGIRMA",zh:'平均折扣',de:'DURCHSCHN. RABATT'},
+  cubeHint:{ru:'ЗАЖМИТЕ И ВРАЩАЙТЕ',en:'DRAG TO ROTATE',uz:'AYLANTIRISH UCHUN SURING',zh:'拖动以旋转',de:'ZIEHEN ZUM DREHEN'},
+  searchPlaceholder:{ru:'Поиск игр…',en:'Search games…',uz:"O'yinlarni qidirish…",zh:'搜索游戏…',de:'Spiele suchen…'},
+  searchEmpty:{ru:'Ничего не найдено',en:'Nothing found',uz:'Hech narsa topilmadi',zh:'未找到结果',de:'Nichts gefunden'},
+  catTitle:{ru:'КАТЕГОРИИ',en:'CATEGORIES',uz:'TOIFALAR',zh:'分类',de:'KATEGORIEN'},
+  catSub:{ru:'Найдите жанр по своему настроению',en:'Find a genre that matches your mood',uz:'Kayfiyatingizga mos janrni toping',zh:'找到适合你心情的游戏类型',de:'Finde das passende Genre für deine Stimmung'},
+  storeTitle:{ru:'ПОПУЛЯРНЫЕ ИГРЫ',en:'POPULAR GAMES',uz:"MASHHUR O'YINLAR",zh:'热门游戏',de:'BELIEBTE SPIELE'},
+  storeSub:{ru:'То, во что играют прямо сейчас',en:'What everyone is playing right now',uz:'Hozir hamma o\'ynayotgan o\'yinlar',zh:'现在大家都在玩的游戏',de:'Was gerade alle spielen'},
+  viewAll:{ru:'ВСЕ ИГРЫ',en:'ALL GAMES',uz:"BARCHA O'YINLAR",zh:'查看全部',de:'ALLE SPIELE'},
+  dealsTitle:{ru:'ЛУЧШИЕ СКИДКИ',en:'BEST DEALS',uz:'ENG YAXSHI CHEGIRMALAR',zh:'超值折扣',de:'BESTE ANGEBOTE'},
+  dealsSub:{ru:'Успейте купить, пока действует акция',en:'Grab them before the offer ends',uz:'Aksiya tugamasidan oldin xarid qiling',zh:'趁折扣结束前入手',de:'Sichere dir die Angebote, bevor sie enden'},
+  dealsEndsIn:{ru:'До конца:',en:'Ends in:',uz:'Tugashiga:',zh:'剩余时间：',de:'Endet in:'},
+  libraryTitle:{ru:'МОЯ БИБЛИОТЕКА',en:'MY LIBRARY',uz:'MENING KUTUBXONAM',zh:'我的游戏库',de:'MEINE BIBLIOTHEK'},
+  favTitle:{ru:'ИЗБРАННОЕ',en:'FAVORITES',uz:'SEVIMLILAR',zh:'收藏夹',de:'FAVORITEN'},
+  profileTitle:{ru:'ПРОФИЛЬ',en:'PROFILE',uz:'PROFIL',zh:'个人资料',de:'PROFIL'},
+  emptyLibTitle:{ru:'Библиотека пуста',en:'Your library is empty',uz:'Kutubxona bo\'sh',zh:'游戏库为空',de:'Deine Bibliothek ist leer'},
+  emptyLibDesc:{ru:'Купленные и добавленные игры появятся здесь',en:'Purchased and added games will show up here',uz:'Sotib olingan o\'yinlar shu yerda ko\'rinadi',zh:'购买或添加的游戏会显示在此处',de:'Gekaufte und hinzugefügte Spiele erscheinen hier'},
+  emptyFavTitle:{ru:'Пока ничего не сохранено',en:'Nothing saved yet',uz:'Hozircha hech narsa saqlanmagan',zh:'暂无收藏',de:'Noch nichts gespeichert'},
+  emptyFavDesc:{ru:'Отмечайте игры сердечком, чтобы вернуться к ним позже',en:'Heart a game to come back to it later',uz:'Keyinroq qaytish uchun o\'yinni yurak belgisi bilan belgilang',zh:'点击心形图标以稍后查看',de:'Markiere Spiele mit dem Herz, um später zurückzukehren'},
+  play:{ru:'ИГРАТЬ',en:'PLAY',uz:"O'YNASH",zh:'开始游戏',de:'SPIELEN'},
+  hoursPlayed:{ru:'ч. в игре',en:'hrs played',uz:'soat o\'ynalgan',zh:'小时游玩',de:'Std. gespielt'},
+  lastPlayed:{ru:'последний раз',en:'last played',uz:'oxirgi marta',zh:'最近游玩',de:'zuletzt gespielt'},
+  daysAgo:{ru:'дн. назад',en:'days ago',uz:'kun oldin',zh:'天前',de:'Tage her'},
+  addFav:{ru:'В избранное',en:'Add to favorites',uz:"Sevimlilarga qo'shish",zh:'加入收藏',de:'Zu Favoriten'},
+  removeFav:{ru:'В избранном',en:'In favorites',uz:'Sevimlilarda',zh:'已收藏',de:'In Favoriten'},
+  addLib:{ru:'В библиотеку',en:'Add to library',uz:"Kutubxonaga qo'shish",zh:'加入游戏库',de:'Zur Bibliothek'},
+  inLib:{ru:'В библиотеке',en:'In library',uz:'Kutubxonada',zh:'已在库中',de:'In Bibliothek'},
+  buyNow:{ru:'КУПИТЬ',en:'BUY NOW',uz:"SOTIB OLISH",zh:'立即购买',de:'JETZT KAUFEN'},
+  playFree:{ru:'ИГРАТЬ БЕСПЛАТНО',en:'PLAY FREE',uz:"BEPUL O'YNASH",zh:'免费游玩',de:'KOSTENLOS SPIELEN'},
+  free:{ru:'Бесплатно',en:'Free',uz:'Bepul',zh:'免费',de:'Kostenlos'},
+  addToCart:{ru:'В корзину',en:'Add to cart',uz:"Savatga qo'shish",zh:'加入购物车',de:'In den Warenkorb'},
+  developer:{ru:'Разработчик',en:'Developer',uz:'Ishlab chiquvchi',zh:'开发商',de:'Entwickler'},
+  publisher:{ru:'Издатель',en:'Publisher',uz:'Nashriyotchi',zh:'发行商',de:'Publisher'},
+  releaseDate:{ru:'Дата выхода',en:'Release date',uz:'Chiqarilgan sana',zh:'发行日期',de:'Erscheinungsdatum'},
+  players:{ru:'Игроков',en:'Players',uz:'O\'yinchilar',zh:'玩家人数',de:'Spieler'},
+  languagesLbl:{ru:'Языки',en:'Languages',uz:'Tillar',zh:'语言',de:'Sprachen'},
+  platforms:{ru:'Платформы',en:'Platforms',uz:'Platformalar',zh:'平台',de:'Plattformen'},
+  ratingLbl:{ru:'Рейтинг',en:'Rating',uz:'Reyting',zh:'评分',de:'Bewertung'},
+  watchTrailer:{ru:'СМОТРЕТЬ ТРЕЙЛЕР',en:'WATCH TRAILER',uz:"TRAYLERNI KO'RISH",zh:'观看预告片',de:'TRAILER ANSEHEN'},
+  screenshots:{ru:'Скриншоты',en:'Screenshots',uz:'Skrinshotlar',zh:'游戏截图',de:'Screenshots'},
+  sysReq:{ru:'Системные требования',en:'System requirements',uz:'Tizim talablari',zh:'系统要求',de:'Systemanforderungen'},
+  minimum:{ru:'Минимальные',en:'Minimum',uz:'Minimal',zh:'最低配置',de:'Minimum'},
+  recommended:{ru:'Рекомендуемые',en:'Recommended',uz:'Tavsiya etilgan',zh:'推荐配置',de:'Empfohlen'},
+  os:{ru:'ОС',en:'OS',uz:'OT',zh:'系统',de:'Betriebssystem'},
+  cpu:{ru:'Процессор',en:'Processor',uz:'Protsessor',zh:'处理器',de:'Prozessor'},
+  gpu:{ru:'Видеокарта',en:'Graphics',uz:'Videokarta',zh:'显卡',de:'Grafik'},
+  ram:{ru:'Память',en:'Memory',uz:'Xotira',zh:'内存',de:'Arbeitsspeicher'},
+  storage:{ru:'Накопитель',en:'Storage',uz:'Xotira qurilmasi',zh:'存储空间',de:'Speicherplatz'},
+  back:{ru:'Назад',en:'Back',uz:'Orqaga',zh:'返回',de:'Zurück'},
+  demoNote:{ru:'Демонстрационная цена. Реальная оплата не подключена — интеграция Stripe добавляется отдельно.',en:'Demo price. Real payment is not connected — Stripe integration can be added separately.',uz:'Namoyish narxi. Haqiqiy to\'lov ulanmagan — Stripe integratsiyasi alohida qo\'shiladi.',zh:'演示价格。尚未接入真实支付，可另行集成 Stripe。',de:'Demo-Preis. Es ist keine echte Zahlung verbunden — eine Stripe-Integration kann separat hinzugefügt werden.'},
+  cartTitle:{ru:'КОРЗИНА',en:'CART',uz:'SAVATCHA',zh:'购物车',de:'WARENKORB'},
+  cartEmptyTitle:{ru:'Корзина пуста',en:'Your cart is empty',uz:'Savatcha bo\'sh',zh:'购物车是空的',de:'Dein Warenkorb ist leer'},
+  cartEmptyDesc:{ru:'Добавьте игру, чтобы продолжить',en:'Add a game to get started',uz:'Davom etish uchun o\'yin qo\'shing',zh:'添加游戏以继续',de:'Füge ein Spiel hinzu, um fortzufahren'},
+  total:{ru:'Итого',en:'Total',uz:'Jami',zh:'总计',de:'Gesamt'},
+  checkoutBtn:{ru:'ПЕРЕЙТИ К ОПЛАТЕ',en:'PROCEED TO CHECKOUT',uz:"TO'LOVGA O'TISH",zh:'去结算',de:'ZUR KASSE'},
+  checkoutTitle:{ru:'Оформление заказа',en:'Checkout',uz:'Buyurtmani rasmiylashtirish',zh:'结账',de:'Kasse'},
+  checkoutSub:{ru:'Демонстрационный checkout-процесс',en:'A demo checkout flow',uz:'Namoyish checkout jarayoni',zh:'演示结账流程',de:'Ein Demo-Checkout-Ablauf'},
+  email:{ru:'Электронная почта',en:'Email',uz:'Elektron pochta',zh:'电子邮箱',de:'E-Mail'},
+  cardNumber:{ru:'Номер карты',en:'Card number',uz:'Karta raqami',zh:'卡号',de:'Kartennummer'},
+  expiry:{ru:'Срок действия',en:'Expiry',uz:'Amal qilish muddati',zh:'有效期',de:'Ablaufdatum'},
+  cvv:{ru:'CVV',en:'CVV',uz:'CVV',zh:'CVV',de:'CVV'},
+  payNow:{ru:'ОПЛАТИТЬ',en:'PAY NOW',uz:"TO'LASH",zh:'立即支付',de:'JETZT ZAHLEN'},
+  processing:{ru:'Обработка…',en:'Processing…',uz:'Ishlanmoqda…',zh:'处理中…',de:'Wird verarbeitet…'},
+  successTitle:{ru:'Покупка завершена',en:'Purchase complete',uz:'Xarid yakunlandi',zh:'购买成功',de:'Kauf abgeschlossen'},
+  successDesc:{ru:'Игры добавлены в вашу библиотеку',en:'Games have been added to your library',uz:'O\'yinlar kutubxonangizga qo\'shildi',zh:'游戏已加入您的游戏库',de:'Spiele wurden zu deiner Bibliothek hinzugefügt'},
+  close:{ru:'Закрыть',en:'Close',uz:'Yopish',zh:'关闭',de:'Schließen'},
+  demoFlag:{ru:'Это демо-checkout. Данные карты никуда не отправляются и не сохраняются.',en:'This is a demo checkout. Card data is never sent or stored anywhere.',uz:'Bu demo checkout. Karta ma\'lumotlari hech qayerga yuborilmaydi va saqlanmaydi.',zh:'这是演示结账。卡片信息不会被发送或保存。',de:'Dies ist ein Demo-Checkout. Kartendaten werden nirgendwo gesendet oder gespeichert.'},
+  toastAddedLib:{ru:'Игра добавлена в библиотеку',en:'Game added to library',uz:'O\'yin kutubxonaga qo\'shildi',zh:'游戏已加入游戏库',de:'Spiel zur Bibliothek hinzugefügt'},
+  toastAddedFav:{ru:'Игра добавлена в избранное',en:'Game added to favorites',uz:'O\'yin sevimlilarga qo\'shildi',zh:'游戏已加入收藏',de:'Spiel zu Favoriten hinzugefügt'},
+  toastRemovedFav:{ru:'Игра удалена из избранного',en:'Game removed from favorites',uz:'O\'yin sevimlilardan olib tashlandi',zh:'游戏已从收藏中移除',de:'Spiel aus Favoriten entfernt'},
+  toastPurchaseSuccess:{ru:'Покупка успешно завершена',en:'Purchase successfully completed',uz:'Xarid muvaffaqiyatli yakunlandi',zh:'购买已成功完成',de:'Kauf erfolgreich abgeschlossen'},
+  toastAddedCart:{ru:'Игра добавлена в корзину',en:'Game added to cart',uz:'O\'yin savatchaga qo\'shildi',zh:'游戏已加入购物车',de:'Spiel zum Warenkorb hinzugefügt'},
+  toastAlreadyOwned:{ru:'Игра уже в вашей библиотеке',en:'Game is already in your library',uz:'O\'yin allaqachon kutubxonangizda',zh:'该游戏已在您的游戏库中',de:'Spiel ist bereits in deiner Bibliothek'},
+  gamesOwned:{ru:'ИГР В БИБЛИОТЕКЕ',en:'GAMES OWNED',uz:'MAVJUD O\'YINLAR',zh:'拥有游戏',de:'SPIELE IM BESITZ'},
+  wishlistN:{ru:'В ИЗБРАННОМ',en:'WISHLISTED',uz:'SEVIMLILARDA',zh:'心愿单',de:'AUF DER WUNSCHLISTE'},
+  achievementsN:{ru:'ДОСТИЖЕНИЙ',en:'ACHIEVEMENTS',uz:'YUTUQLAR',zh:'成就数',de:'ERFOLGE'},
+  playtimeN:{ru:'ЧАСОВ В ИГРАХ',en:'HOURS PLAYED',uz:'O\'YNALGAN SOATLAR',zh:'游玩时长',de:'STUNDEN GESPIELT'},
+  achievementsTitle:{ru:'ДОСТИЖЕНИЯ',en:'ACHIEVEMENTS',uz:'YUTUQLAR',zh:'成就',de:'ERFOLGE'},
+  footerAboutTxt:{ru:'Игровая платформа нового поколения. Без границ, без компромиссов.',en:'A next-generation game platform. No borders, no compromises.',uz:'Yangi avlod o\'yin platformasi. Chegarasiz, murosasiz.',zh:'新一代游戏平台。无国界，无妥协。',de:'Eine Spieleplattform der nächsten Generation. Ohne Grenzen, ohne Kompromisse.'},
+  footerGames:{ru:'Игры',en:'Games',uz:"O'yinlar",zh:'游戏',de:'Spiele'},
+  footerStoreH:{ru:'Магазин',en:'Store',uz:"Do'kon",zh:'商店',de:'Shop'},
+  footerHelpH:{ru:'Помощь',en:'Help',uz:'Yordam',zh:'帮助',de:'Hilfe'},
+  footerCommunityH:{ru:'Сообщество',en:'Community',uz:'Jamiyat',zh:'社区',de:'Community'},
+  fNewReleases:{ru:'Новинки',en:'New releases',uz:'Yangi chiqishlar',zh:'新品发布',de:'Neuerscheinungen'},
+  fTopSellers:{ru:'Хиты продаж',en:'Top sellers',uz:'Eng ko\'p sotilganlar',zh:'畅销榜',de:'Bestseller'},
+  fUpcoming:{ru:'Скоро выйдут',en:'Upcoming',uz:'Tez orada',zh:'即将推出',de:'Demnächst'},
+  fFreeGames:{ru:'Бесплатные игры',en:'Free games',uz:'Bepul o\'yinlar',zh:'免费游戏',de:'Kostenlose Spiele'},
+  fGiftCards:{ru:'Подарочные карты',en:'Gift cards',uz:'Sovg\'a kartalari',zh:'礼品卡',de:'Geschenkkarten'},
+  fRefunds:{ru:'Возвраты',en:'Refunds',uz:'Qaytarishlar',zh:'退款',de:'Rückerstattungen'},
+  fSupportCenter:{ru:'Центр поддержки',en:'Support center',uz:'Yordam markazi',zh:'支持中心',de:'Support-Center'},
+  fSystemStatus:{ru:'Статус системы',en:'System status',uz:'Tizim holati',zh:'系统状态',de:'Systemstatus'},
+  fForums:{ru:'Форумы',en:'Forums',uz:'Forumlar',zh:'论坛',de:'Foren'},
+  fNews:{ru:'Новости',en:'News',uz:'Yangiliklar',zh:'新闻',de:'Neuigkeiten'},
+  fEvents:{ru:'Мероприятия',en:'Events',uz:'Tadbirlar',zh:'活动',de:'Veranstaltungen'},
+  fPrivacy:{ru:'Политика конфиденциальности',en:'Privacy policy',uz:'Maxfiylik siyosati',zh:'隐私政策',de:'Datenschutzrichtlinie'},
+  fTerms:{ru:'Условия использования',en:'Terms of use',uz:'Foydalanish shartlari',zh:'使用条款',de:'Nutzungsbedingungen'},
+  fRights:{ru:'Все права защищены. Демонстрационный проект.',en:'All rights reserved. Demonstration project.',uz:'Barcha huquqlar himoyalangan. Namoyish loyihasi.',zh:'保留所有权利。演示项目。',de:'Alle Rechte vorbehalten. Demonstrationsprojekt.'},
+  quickView:{ru:'Быстрый просмотр',en:'Quick view',uz:'Tezkor ko\'rish',zh:'快速查看',de:'Schnellansicht'},
+};
+
+const GENRE = {
+  action:{ru:'Экшен',en:'Action',uz:'Ekshn',zh:'动作',de:'Action'},
+  rpg:{ru:'RPG',en:'RPG',uz:'RPG',zh:'角色扮演',de:'RPG'},
+  shooter:{ru:'Шутер',en:'Shooter',uz:'Shooter',zh:'射击',de:'Shooter'},
+  horror:{ru:'Хоррор',en:'Horror',uz:'Xorror',zh:'恐怖',de:'Horror'},
+  racing:{ru:'Гонки',en:'Racing',uz:'Poyga',zh:'竞速',de:'Rennspiel'},
+  adventure:{ru:'Приключения',en:'Adventure',uz:'Sarguzasht',zh:'冒险',de:'Abenteuer'},
+  strategy:{ru:'Стратегия',en:'Strategy',uz:'Strategiya',zh:'策略',de:'Strategie'},
+  indie:{ru:'Инди',en:'Indie',uz:'Indie',zh:'独立游戏',de:'Indie'},
+  sports:{ru:'Спорт',en:'Sports',uz:'Sport',zh:'体育',de:'Sport'},
+  simulation:{ru:'Симулятор',en:'Simulation',uz:'Simulyator',zh:'模拟',de:'Simulation'},
+  openworld:{ru:'Открытый мир',en:'Open world',uz:'Ochiq dunyo',zh:'开放世界',de:'Open World'},
+};
+const CATEGORIES = ['action','rpg','shooter','horror','racing','adventure','strategy','indie','sports','simulation'];
+
+let currentLang = 'ru';
+function t(key){ return (T[key] && (T[key][currentLang]||T[key].en)) || key; }
+function tg(key){ return (GENRE[key] && (GENRE[key][currentLang]||GENRE[key].en)) || key; }
+
+/* ---- games dataset (real titles / real facts, stylised original cover art) ---- */
+const GAMES = [
+ {id:'cyberpunk2077',title:'Cyberpunk 2077',genres:['rpg','openworld'],dev:'CD Projekt Red',pub:'CD Projekt',release:'2020-12-10',rating:4.5,price:59.99,discount:50,platforms:['pc','ps','xbox'],players:'1',c1:'#e5092f',c2:'#0b0d14',accent:'#0066ff',desc:{ru:'Ролевой экшен об уличном наёмнике в мегаполисе Найт-Сити, где технологии и жажда власти изменили саму природу человека.',en:'An open-world action RPG set in Night City, a megalopolis obsessed with power, glamour and body modification.'}},
+ {id:'gta5',title:'Grand Theft Auto V',genres:['action','openworld'],dev:'Rockstar North',pub:'Rockstar Games',release:'2013-09-17',rating:4.7,price:29.99,discount:33,platforms:['pc','ps','xbox'],players:'1-30',c1:'#0b8a4a',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Три истории, один город. Криминальная сага в вымышленном Лос-Сантосе с огромным открытым миром.',en:'Three criminals, one sprawling open world. A crime saga set across the fictional city of Los Santos.'}},
+ {id:'rdr2',title:'Red Dead Redemption 2',genres:['action','openworld'],dev:'Rockstar Games',pub:'Rockstar Games',release:'2018-10-26',rating:4.9,price:59.99,discount:40,platforms:['pc','ps','xbox'],players:'1-32',c1:'#8a5a2a',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Эпическая история заката эпохи Дикого Запада, рассказанная от лица бывшего преступника Артура Моргана.',en:'An epic tale of life in America\'s unforgiving heartland, told through the eyes of outlaw Arthur Morgan.'}},
+ {id:'witcher3',title:'The Witcher 3: Wild Hunt',genres:['rpg','openworld'],dev:'CD Projekt Red',pub:'CD Projekt',release:'2015-05-19',rating:4.9,price:39.99,discount:70,platforms:['pc','ps','xbox'],players:'1',c1:'#7b2cff',c2:'#0b0d14',accent:'#0066ff',desc:{ru:'Геральт из Ривии ищет свою приёмную дочь в мире, раздираемом войной и населённом чудовищами.',en:'Geralt of Rivia searches for his adopted daughter across a war-ravaged, monster-infested continent.'}},
+ {id:'eldenring',title:'Elden Ring',genres:['rpg','action'],dev:'FromSoftware',pub:'Bandai Namco',release:'2022-02-25',rating:4.8,price:59.99,discount:20,platforms:['pc','ps','xbox'],players:'1-4',c1:'#c9a24a',c2:'#0b0d14',accent:'#7b2cff',desc:{ru:'Тёмное фэнтези в открытом мире Междуземья, созданное Хидэтакой Миядзаки и Джорджем Р. Р. Мартином.',en:'A dark fantasy open world crafted by Hidetaka Miyazaki and George R. R. Martin.'}},
+ {id:'hogwarts',title:'Hogwarts Legacy',genres:['rpg','adventure'],dev:'Avalanche Software',pub:'Warner Bros. Games',release:'2023-02-10',rating:4.4,price:49.99,discount:30,platforms:['pc','ps','xbox'],players:'1',c1:'#7b2cff',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Погрузитесь в мир волшебства XIX века как студент Хогвартса, обладающий редкой древней силой.',en:'Live your unwritten story as a student with a rare ancient power at Hogwarts in the 1800s.'}},
+ {id:'godofwar',title:'God of War',genres:['action','adventure'],dev:'Santa Monica Studio',pub:'PlayStation PC',release:'2022-01-14',rating:4.8,price:49.99,discount:25,platforms:['pc','ps'],players:'1',c1:'#0066ff',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Кратос и его сын Атрей отправляются в путешествие по миру скандинавских богов и чудовищ.',en:'Kratos and his son Atreus journey through the realms of Norse gods and monsters.'}},
+ {id:'spiderman',title:'Marvel\'s Spider-Man Remastered',genres:['action','adventure'],dev:'Insomniac Games',pub:'PlayStation PC',release:'2022-08-12',rating:4.6,price:59.99,discount:15,platforms:['pc','ps'],players:'1',c1:'#e5092f',c2:'#0066ff',accent:'#e5092f',desc:{ru:'Опытный Человек-паук защищает Нью-Йорк, сталкиваясь с могущественным преступным синдикатом.',en:'An experienced Spider-Man protects New York from a dangerous criminal syndicate.'}},
+ {id:'milesmorales',title:'Marvel\'s Spider-Man: Miles Morales',genres:['action','adventure'],dev:'Insomniac Games',pub:'PlayStation PC',release:'2022-11-18',rating:4.5,price:49.99,discount:20,platforms:['pc','ps'],players:'1',c1:'#e5092f',c2:'#0b0d14',accent:'#7b2cff',desc:{ru:'Майлз Моралес осваивает новые силы и учится быть героем своего района зимним Нью-Йорком.',en:'Miles Morales masters new powers and learns what it takes to be a hero in a snow-covered New York.'}},
+ {id:'re4',title:'Resident Evil 4',genres:['horror','action'],dev:'Capcom',pub:'Capcom',release:'2023-03-24',rating:4.7,price:59.99,discount:10,platforms:['pc','ps','xbox'],players:'1',c1:'#8a0c22',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Леон С. Кеннеди отправляется в европейскую глушь на поиски похищенной дочери президента.',en:'Leon S. Kennedy is sent to rescue the president\'s kidnapped daughter in rural Europe.'}},
+ {id:'doometernal',title:'DOOM Eternal',genres:['shooter','action'],dev:'id Software',pub:'Bethesda Softworks',release:'2020-03-20',rating:4.7,price:39.99,discount:60,platforms:['pc','ps','xbox'],players:'1-2',c1:'#e5092f',c2:'#0b0d14',accent:'#0b0d14',desc:{ru:'Палач Рока возвращается, чтобы остановить вторжение адских орд на Землю.',en:'The Doom Slayer returns to stop a hellish invasion that has engulfed the Earth.'}},
+ {id:'forzah5',title:'Forza Horizon 5',genres:['racing'],dev:'Playground Games',pub:'Xbox Game Studios',release:'2021-11-09',rating:4.6,price:59.99,discount:25,platforms:['pc','xbox'],players:'1-8',c1:'#0066ff',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Гоночный фестиваль под открытым небом Мексики с сотнями лицензированных автомобилей.',en:'An open-world racing festival across the vibrant landscapes of Mexico.'}},
+ {id:'bg3',title:'Baldur\'s Gate 3',genres:['rpg','strategy'],dev:'Larian Studios',pub:'Larian Studios',release:'2023-08-03',rating:4.9,price:59.99,discount:0,platforms:['pc','ps'],players:'1-4',c1:'#7b2cff',c2:'#0b0d14',accent:'#0066ff',desc:{ru:'Соберите отряд и вернитесь в Забытые Королевства в истории о жертве, власти и искуплении.',en:'Gather your party and return to the Forgotten Realms in a tale of sacrifice, power and survival.'}},
+ {id:'acshadows',title:'Assassin\'s Creed Shadows',genres:['action','adventure'],dev:'Ubisoft Quebec',pub:'Ubisoft',release:'2025-03-20',rating:4.2,price:69.99,discount:0,platforms:['pc','ps','xbox'],players:'1',c1:'#0b0d14',c2:'#8a0c22',accent:'#e5092f',desc:{ru:'Япония периода Адзути-Момояма: синоби Наоэ и самурай Ясукэ действуют сообща и порознь.',en:'Feudal Japan: shinobi Naoe and samurai Yasuke forge their own paths, together and apart.'}},
+ {id:'wukong',title:'Black Myth: Wukong',genres:['action','rpg'],dev:'Game Science',pub:'Game Science',release:'2024-08-20',rating:4.6,price:59.99,discount:10,platforms:['pc','ps'],players:'1',c1:'#c9a24a',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Экшен по мотивам «Путешествия на Запад» о Царе обезьян, ищущем правду за легендой.',en:'An action RPG inspired by "Journey to the West", following the legend of the Monkey King.'}},
+ {id:'dyinglight2',title:'Dying Light 2',genres:['action','horror'],dev:'Techland',pub:'Techland',release:'2022-02-04',rating:4.1,price:49.99,discount:55,platforms:['pc','ps','xbox'],players:'1-4',c1:'#8a0c22',c2:'#0b0d14',accent:'#0066ff',desc:{ru:'Паркур и выживание в городе, разорванном враждующими фракциями и зомби-эпидемией.',en:'Parkour and survival in a city torn apart by warring factions and a zombie outbreak.'}},
+ {id:'cs2',title:'Counter-Strike 2',genres:['shooter'],dev:'Valve',pub:'Valve',release:'2023-09-27',rating:4.3,price:0,discount:0,platforms:['pc'],players:'1-10',c1:'#c9a24a',c2:'#0b0d14',accent:'#e5092f',desc:{ru:'Легендарный тактический шутер 5 на 5, обновлённый на движке Source 2.',en:'The legendary 5v5 tactical shooter, rebuilt on Source 2.'}},
+ {id:'pubg',title:'PUBG: BATTLEGROUNDS',genres:['shooter'],dev:'Krafton',pub:'Krafton',release:'2017-12-20',rating:3.9,price:0,discount:0,platforms:['pc','ps','xbox'],players:'1-100',c1:'#8a5a2a',c2:'#0b0d14',accent:'#0066ff',desc:{ru:'Родоначальник жанра battle royale — сто игроков, один остров, один победитель.',en:'The battle royale that started it all — one hundred players, one island, one winner.'}},
+ {id:'apex',title:'Apex Legends',genres:['shooter'],dev:'Respawn Entertainment',pub:'Electronic Arts',release:'2019-02-04',rating:4.2,price:0,discount:0,platforms:['pc','ps','xbox'],players:'1-60',c1:'#e5092f',c2:'#7b2cff',accent:'#0066ff',desc:{ru:'Динамичный командный battle royale с уникальными легендами и их особыми способностями.',en:'A fast-paced team battle royale featuring unique legends with signature abilities.'}},
+];
+function gdesc(g){ const d=g.desc[currentLang]||g.desc.ru||g.desc.en; if(d) return d; return `${tg(g.genres[0])} · ${g.dev} · ${new Date(g.release).getFullYear()}`; }
+function priceOf(g){ return g.discount? +(g.price*(1-g.discount/100)).toFixed(2) : g.price; }
+function fmtDate(d){ const dt=new Date(d); const m={ru:['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'],en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],uz:['yan','fev','mar','apr','may','iyun','iyul','avg','sen','okt','noy','dek'],zh:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],de:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']}[currentLang]||[]; return currentLang==='zh'? `${dt.getFullYear()}年${m[dt.getMonth()]}${dt.getDate()}日` : `${dt.getDate()} ${m[dt.getMonth()]} ${dt.getFullYear()}`; }
+
+/* =========================================================================
+   state
+   ========================================================================= */
+const state = {
+  library: new Set(),
+  favorites: new Set(),
+  cart: [],
+  currentGame: null,
+  currentShot: 0,
+  page: 'home',
+};
+
+/* =========================================================================
+   icons (inline SVG strings, stroke-based, no external deps)
+   ========================================================================= */
+const ICON = {
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7.5-4.8-10-9.3C.5 8.2 2.3 4.5 6 4c2.2-.3 4.2.9 6 3 1.8-2.1 3.8-3.3 6-3 3.7.5 5.5 4.2 4 7.7C19.5 16.2 12 21 12 21z"/></svg>',
+  library:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="6" height="16" rx="1"/><rect x="11" y="4" width="6" height="16" rx="1"/><path d="M20 7l1 13"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.5-4 4.3-6 7.5-6s6 2 7.5 6"/></svg>',
+  cart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="20.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="18" cy="20.5" r="1.1" fill="currentColor" stroke="none"/><path d="M2.5 3.5h2.6l2.3 12.2a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6l1.4-7.7H6.4"/></svg>',
+  close:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5l14 14M19 5L5 19"/></svg>',
+  chevR:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>',
+  chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>',
+  menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  star:'<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7L6 21.1l1.6-7L2.2 9.3l7.1-.7z"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>',
+  pc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="4" width="19" height="12" rx="1"/><path d="M8 20h8M12 16v4"/></svg>',
+  ps:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><path d="M9 8v8M15 8v8" stroke-width="1.4"/></svg>',
+  xbox:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18" stroke-width="1.2"/><circle cx="12" cy="12" r="9.3"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12l5 5L20 6"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 5H4a3 3 0 0 0 3 5M17 5h3a3 3 0 0 1-3 5"/><path d="M12 14v3M9 20h6l-1-3H10z"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5v.01"/></svg>',
+  boxEmpty:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M3 8v9l9 4 9-4V8"/><path d="M12 12v9"/></svg>',
+  gamepad:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 10v4M5 12h4M16 10.5h.01M18.5 13h.01"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4.5" y="10" width="15" height="10" rx="1.5"/><path d="M7.5 10V7a4.5 4.5 0 0 1 9 0v3"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+};
+
+/* =========================================================================
+   canvas cover-art generator — original stylised art (no real box-art used)
+   ========================================================================= */
+const coverCache = {};
+function hexToRgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function generateCover(game, variant=0, w=640, h=800, withTitle=true){
+  const key = game.id+'_'+variant+'_'+w+'x'+h+'_'+(withTitle?'t':'n');
+  if(coverCache[key]) return coverCache[key];
+  const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+  const ctx = cv.getContext('2d');
+  const rnd = mulberry32(hashStr(game.id+variant));
+  // base gradient
+  const grad = ctx.createLinearGradient(0,0,w,h);
+  grad.addColorStop(0, game.c1); grad.addColorStop(1, game.c2);
+  ctx.fillStyle = grad; ctx.fillRect(0,0,w,h);
+  // diagonal bands
+  ctx.save();
+  ctx.globalAlpha = .10;
+  ctx.fillStyle = '#ffffff';
+  for(let i=-2;i<14;i++){
+    ctx.beginPath();
+    const x = i*(w/9) + variant*14;
+    ctx.moveTo(x,0); ctx.lineTo(x+w*0.09,0); ctx.lineTo(x+w*0.09-h*0.35,h); ctx.lineTo(x-h*0.35,h);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  // halftone dot field
+  ctx.save();
+  ctx.globalAlpha=.16;
+  ctx.fillStyle = game.accent;
+  const gap = 13;
+  for(let y=0;y<h;y+=gap){
+    for(let x=(y/gap%2?gap/2:0);x<w;x+=gap){
+      const dist = Math.hypot(x-w*0.75, y-h*0.25);
+      const r = Math.max(0, 2.6 - dist/260);
+      if(r>0.2){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); }
+    }
+  }
+  ctx.restore();
+  // vignette
+  const vg = ctx.createRadialGradient(w*0.5,h*0.4,h*0.1,w*0.5,h*0.5,h*0.85);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.55)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+  // rgb glitch slabs
+  for(let i=0;i<3;i++){
+    const gy = rnd()*h;
+    const gh = 6+rnd()*22;
+    ctx.save();
+    ctx.globalCompositeOperation='lighten';
+    ctx.globalAlpha=.5;
+    ctx.fillStyle='#e5092f'; ctx.fillRect(-6+rnd()*10,gy,w,gh);
+    ctx.fillStyle='#0066ff'; ctx.fillRect(6-rnd()*10,gy+gh*0.4,w,gh*0.6);
+    ctx.restore();
+  }
+  // title typography
+  if(withTitle){
+  ctx.save();
+  ctx.textBaseline='alphabetic';
+  const words = game.title.toUpperCase().split(' ');
+  let fontSize = Math.max(30, w*0.11);
+  ctx.font = `800 ${fontSize}px Arial, sans-serif`;
+  // wrap into lines that fit width*0.86
+  const maxW = w*0.86;
+  let lines=[]; let cur='';
+  words.forEach(word=>{
+    const test = cur? cur+' '+word: word;
+    if(ctx.measureText(test).width > maxW && cur){ lines.push(cur); cur=word; } else cur=test;
+  });
+  if(cur) lines.push(cur);
+  if(lines.length>3){ fontSize*=0.68; ctx.font = `800 ${fontSize}px Arial, sans-serif`; }
+  const lineH = fontSize*1.02;
+  let ty = h*0.8 - (lines.length-1)*lineH;
+  ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=18;
+  lines.forEach((ln,i)=>{
+    ctx.fillStyle = i===lines.length-1? '#ffffff' : '#ffffff';
+    ctx.fillText(ln, w*0.07, ty + i*lineH);
+  });
+  ctx.restore();
+  }
+  // frame
+  ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=2; ctx.strokeRect(1,1,w-2,h-2);
+  ctx.strokeStyle=game.accent; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,h-4); ctx.lineTo(w*0.4,h-4); ctx.stroke();
+  const url = cv.toDataURL('image/jpeg',0.86);
+  coverCache[key]=url;
+  return url;
+}
+function hashStr(s){let h=0; for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i); h|=0;} return h>>>0;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function platIcon(p){ return {pc:ICON.pc, ps:ICON.ps, xbox:ICON.xbox}[p]||ICON.pc; }
+
+/* =========================================================================
+   root DOM skeleton
+   ========================================================================= */
+function buildRoot(){
+  document.getElementById('root').innerHTML = `
+  <header id="nav">
+    <div class="nav-left">
+      <div class="brand"><div class="brand-mark"><span></span><span></span></div>VERTEX</div>
+      <ul class="nav-menu">
+        <li><button data-scroll="home" class="active-link" data-i18n="navHome">Главная</button></li>
+        <li><button data-scroll="store" data-i18n="navStore">Магазин</button></li>
+        <li><button data-scroll="store" data-i18n="navGames">Игры</button></li>
+        <li><button data-scroll="categories" data-i18n="navCategories">Категории</button></li>
+        <li><button data-scroll="deals" data-i18n="navDeals">Скидки</button></li>
+        <li><button data-scroll="footer" data-i18n="navCommunity">Сообщество</button></li>
+      </ul>
+    </div>
+    <div class="nav-right">
+      <button class="icon-btn" id="btnSearch" aria-label="search">${ICON.search}</button>
+      <button class="icon-btn" id="btnFav" aria-label="favorites">${ICON.heart}<span class="badge hidden" id="favBadge">0</span></button>
+      <button class="icon-btn" id="btnLib" aria-label="library">${ICON.library}<span class="badge hidden" id="libBadge">0</span></button>
+      <button class="icon-btn" id="btnProfile" aria-label="profile">${ICON.user}</button>
+      <button class="icon-btn" id="btnCart" aria-label="cart">${ICON.cart}<span class="badge hidden" id="cartBadge">0</span></button>
+      <div class="lang-switch">
+        <button class="lang-btn" id="langBtn"><span id="langCode">RU</span></button>
+        <div class="lang-menu" id="langMenu"></div>
+      </div>
+      <button class="icon-btn burger" id="btnBurger">${ICON.menu}</button>
+    </div>
+  </header>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <button class="mm-link" data-scroll="home" data-i18n="navHome">Главная</button>
+    <button class="mm-link" data-scroll="store" data-i18n="navStore">Магазин</button>
+    <button class="mm-link" data-scroll="categories" data-i18n="navCategories">Категории</button>
+    <button class="mm-link" data-scroll="deals" data-i18n="navDeals">Скидки</button>
+    <button class="mm-link" data-scroll="footer" data-i18n="navCommunity">Сообщество</button>
+    <div class="mm-actions">
+      <button id="mmFav">${ICON.heart} <span data-i18n="favTitle">Избранное</span></button>
+      <button id="mmLib">${ICON.library} <span data-i18n="libraryTitle">Библиотека</span></button>
+      <button id="mmProfile">${ICON.user} <span data-i18n="profileTitle">Профиль</span></button>
+    </div>
+    <div class="mm-lang" id="mmLangRow"></div>
+  </div>
+
+  <div class="search-panel" id="searchPanel">
+    <div class="search-inner">
+      <div class="search-input-row">
+        ${ICON.search}
+        <input id="searchInput" data-i18n-placeholder="searchPlaceholder" placeholder="Поиск игр…" autocomplete="off"/>
+        <button class="search-close" id="searchCloseBtn">${ICON.close}</button>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+  </div>
+
+  <main>
+   <div id="homeView">
+    <section class="hero" id="home">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="hero-eyebrow reveal-l"><span class="dot"></span><span data-i18n="heroEyebrow">ЦИФРОВАЯ ИГРОВАЯ ПЛАТФОРМА</span></div>
+          <h1 class="reveal-l"><span data-i18n="heroTitle1">ИГРА НАЧИНАЕТСЯ</span><br><span class="lr" data-i18n="heroTitle2">ЗДЕСЬ</span></h1>
+          <p class="hero-desc reveal-l" data-i18n="heroDesc">Более 19 000 игр, мгновенная библиотека и витрина без границ.</p>
+          <div class="hero-cta-row reveal-l">
+            <button class="btn-primary" data-scroll="store"><span data-i18n="ctaOpenStore">ОТКРЫТЬ МАГАЗИН</span>${ICON.chevR}</button>
+            <button class="btn-ghost" data-scroll="deals"><span data-i18n="ctaExplore">Смотреть скидки</span></button>
+          </div>
+          <div class="hero-stats reveal-l">
+            <div><div class="n">19K+</div><div class="l" data-i18n="heroStat1">ИГРЫ</div></div>
+            <div><div class="n">2.4M</div><div class="l" data-i18n="heroStat2">ИГРОКОВ</div></div>
+            <div><div class="n">-63%</div><div class="l" data-i18n="heroStat3">СКИДКА</div></div>
+          </div>
+        </div>
+        <div class="cube-stage reveal-scale">
+          <canvas id="cubeCanvas"></canvas>
+          <div class="cube-facelabel" id="cubeLabel"></div>
+          <div class="cube-hint" data-i18n="cubeHint">ЗАЖМИТЕ И ВРАЩАЙТЕ</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="categories">
+      <div class="section-head reveal">
+        <div><h2 data-i18n="catTitle">КАТЕГОРИИ</h2><div class="section-sub" data-i18n="catSub">Найдите жанр по своему настроению</div></div>
+        <div class="section-idx">01 / 05</div>
+      </div>
+      <div class="cat-strip reveal" id="catStrip"></div>
+    </section>
+
+    <section class="section" id="store">
+      <div class="section-head reveal">
+        <div><h2 data-i18n="storeTitle">ПОПУЛЯРНЫЕ ИГРЫ</h2><div class="section-sub" data-i18n="storeSub">То, во что играют прямо сейчас</div></div>
+        <button class="view-all" data-scroll="store"><span data-i18n="viewAll">ВСЕ ИГРЫ</span>${ICON.chevR}</button>
+      </div>
+      <div class="bento" id="storeGrid"></div>
+    </section>
+
+    <section class="section" id="deals">
+      <div class="section-head reveal">
+        <div><h2 data-i18n="dealsTitle">ЛУЧШИЕ СКИДКИ</h2><div class="section-sub" data-i18n="dealsSub">Успейте купить, пока действует акция</div></div>
+        <div class="section-idx">03 / 05</div>
+      </div>
+      <div class="deals-strip reveal" id="dealsStrip"></div>
+    </section>
+   </div>
+
+   <div id="libraryView" class="section hidden">
+      <div class="section-head"><div><h2 data-i18n="libraryTitle">МОЯ БИБЛИОТЕКА</h2></div></div>
+      <div id="libraryList"></div>
+   </div>
+
+   <div id="favoritesView" class="section hidden">
+      <div class="section-head"><div><h2 data-i18n="favTitle">ИЗБРАННОЕ</h2></div></div>
+      <div id="favoritesList"></div>
+   </div>
+
+   <div id="profileView" class="section hidden">
+      <div class="section-head"><div><h2 data-i18n="profileTitle">ПРОФИЛЬ</h2></div></div>
+      <div class="profile-head">
+        <div class="avatar"><b>V</b></div>
+        <div class="profile-stats">
+          <div class="pstat"><div class="n" id="pGamesOwned">0</div><div class="l" data-i18n="gamesOwned">ИГР В БИБЛИОТЕКЕ</div></div>
+          <div class="pstat"><div class="n" id="pWishlist">0</div><div class="l" data-i18n="wishlistN">В ИЗБРАННОМ</div></div>
+          <div class="pstat"><div class="n" id="pAch">0/8</div><div class="l" data-i18n="achievementsN">ДОСТИЖЕНИЙ</div></div>
+          <div class="pstat"><div class="n" id="pHours">0</div><div class="l" data-i18n="playtimeN">ЧАСОВ В ИГРАХ</div></div>
+        </div>
+      </div>
+      <h3 class="gv-h3" style="margin-top:6px" data-i18n="achievementsTitle">ДОСТИЖЕНИЯ</h3>
+      <div class="ach-grid" id="achGrid"></div>
+   </div>
+  </main>
+
+  <footer id="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="brand"><div class="brand-mark"><span></span><span></span></div>VERTEX</div>
+          <p data-i18n="footerAboutTxt">Игровая платформа нового поколения.</p>
+          <div class="social-row">
+            <a href="#">${ICON.gamepad}</a><a href="#">${ICON.user}</a><a href="#">${ICON.heart}</a>
+          </div>
+        </div>
+        <div class="footer-col"><h5 data-i18n="footerGames">Игры</h5>
+          <a href="#" data-scroll="store" data-i18n="fNewReleases">Новинки</a>
+          <a href="#" data-scroll="store" data-i18n="fTopSellers">Хиты продаж</a>
+          <a href="#" data-scroll="store" data-i18n="fUpcoming">Скоро выйдут</a>
+          <a href="#" data-scroll="store" data-i18n="fFreeGames">Бесплатные игры</a>
+        </div>
+        <div class="footer-col"><h5 data-i18n="footerStoreH">Магазин</h5>
+          <a href="#" data-scroll="deals" data-i18n="dealsTitle">Скидки</a>
+          <a href="#" data-i18n="fGiftCards">Подарочные карты</a>
+          <a href="#" data-i18n="fRefunds">Возвраты</a>
+        </div>
+        <div class="footer-col"><h5 data-i18n="footerHelpH">Помощь</h5>
+          <a href="#" data-i18n="fSupportCenter">Центр поддержки</a>
+          <a href="#" data-i18n="fSystemStatus">Статус системы</a>
+          <a href="#" data-i18n="fPrivacy">Политика конфиденциальности</a>
+          <a href="#" data-i18n="fTerms">Условия использования</a>
+        </div>
+        <div class="footer-col"><h5 data-i18n="footerCommunityH">Сообщество</h5>
+          <a href="#" data-i18n="fForums">Форумы</a>
+          <a href="#" data-i18n="fNews">Новости</a>
+          <a href="#" data-i18n="fEvents">Мероприятия</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-legal" data-i18n="fRights">Все права защищены. Демонстрационный проект.</div>
+        <div class="footer-langrow" id="footerLangRow"></div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="gameView">
+    <div class="gv-hero" id="gvHero">
+      <button class="gv-back" id="gvBack">${ICON.chevL}<span data-i18n="back">Назад</span></button>
+      <button class="gv-close" id="gvClose">${ICON.close}</button>
+      <div class="gv-titlewrap">
+        <div class="gv-genre-tag" id="gvGenreTag"></div>
+        <h1 class="gv-title" id="gvTitle"></h1>
+      </div>
+    </div>
+    <div class="gv-body">
+      <div>
+        <div class="gv-meta-grid" id="gvMeta"></div>
+        <p class="gv-desc" id="gvDesc"></p>
+        <button class="trailer-btn" id="gvTrailerBtn"><span class="playcircle">${ICON.play}</span><span data-i18n="watchTrailer">СМОТРЕТЬ ТРЕЙЛЕР</span></button>
+        <h3 class="gv-h3" data-i18n="screenshots">Скриншоты</h3>
+        <div class="gv-gallery" id="gvGallery"></div>
+        <h3 class="gv-h3" data-i18n="sysReq">Системные требования</h3>
+        <div class="sysreq" id="gvSysreq"></div>
+      </div>
+      <div class="buy-card" id="gvBuyCard"></div>
+    </div>
+  </div>
+
+  <div id="cartOverlay"></div>
+  <div id="cartDrawer">
+    <div class="cart-head"><h3 data-i18n="cartTitle">КОРЗИНА</h3><button id="cartCloseBtn" class="icon-btn">${ICON.close}</button></div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-foot" id="cartFoot"></div>
+  </div>
+
+  <div class="modal-overlay" id="shotModal">
+    <div class="modal-box wide-16-9" id="shotModalBox">
+      <button class="modal-close" id="shotModalClose">${ICON.close}</button>
+      <img id="shotModalImg" style="width:100%;height:100%;object-fit:cover" />
+      <button class="shot-nav prev" id="shotPrev">${ICON.chevL}</button>
+      <button class="shot-nav next" id="shotNext">${ICON.chevR}</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="trailerModal">
+    <div class="modal-box wide-16-9">
+      <button class="modal-close" id="trailerModalClose">${ICON.close}</button>
+      <div class="trailer-fake" id="trailerFake">
+        <div class="playcircle-lg">${ICON.play}</div>
+        <p id="trailerFakeText">TRAILER</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="checkout-box" id="checkoutBox"></div>
+  </div>
+  `;
+}
+
+/* =========================================================================
+   render: categories
+   ========================================================================= */
+function catCoverBg(genreId){
+  const sample = GAMES.find(g=>g.genres.includes(genreId)) || GAMES[0];
+  return generateCover(sample, 1, 400, 300, false);
+}
+function renderCategories(){
+  const el = document.getElementById('catStrip');
+  el.innerHTML = CATEGORIES.map(c=>{
+    const count = GAMES.filter(g=>g.genres.includes(c)).length;
+    return `<div class="cat-cell" data-cat="${c}">
+      <img class="catbg" src="${catCoverBg(c)}" alt=""/>
+      <span data-cat-label="${c}">${tg(c)}</span>
+      <span class="cat-count">${count}</span>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.cat-cell').forEach(cell=>{
+    cell.addEventListener('click',()=>openCategoryAsSearch(cell.dataset.cat));
+  });
+}
+function openCategoryAsSearch(cat){
+  document.getElementById('searchInput').value = tg(cat);
+  openSearch(); runSearchByGenre(cat);
+}
+
+/* =========================================================================
+   render: store bento grid
+   ========================================================================= */
+const SIZE_PATTERN = ['xl','lg','md','md','md','sm','sm','sm','sm','wide','lg','xl','sm','sm','sm','sm','md','md','md'];
+function cardSizeFor(i){ return SIZE_PATTERN[i % SIZE_PATTERN.length]; }
+function platformIcons(g){ return g.platforms.map(p=>platIcon(p)).join(''); }
+function renderPriceBlock(g){
+  if(g.price===0) return `<span class="price-free">${t('free')}</span>`;
+  if(g.discount>0) return `<span class="price-old">$${g.price.toFixed(2)}</span><span class="price-now">$${priceOf(g).toFixed(2)}</span>`;
+  return `<span class="price-now">$${g.price.toFixed(2)}</span>`;
+}
+function cardHTML(g,i){
+  const size = cardSizeFor(i);
+  const DIMS = { xl:[560,500], lg:[600,430], md:[600,290], sm:[480,320], wide:[480,420] };
+  const [w,h] = DIMS[size] || [560,430];
+  const cover = generateCover(g,0,w,h);
+  const fav = state.favorites.has(g.id);
+  return `<article class="card size-${size}" data-id="${g.id}">
+    <div class="cover">
+      <img src="${cover}" alt="${g.title}" style="width:100%;height:100%;object-fit:cover"/>
+      <div class="card-glitch"></div>
+      <div class="badge-row">
+        ${g.discount>0?`<span class="discount-tag">-${g.discount}%</span>`:'<span></span>'}
+        <span class="rating-tag">${ICON.star}${g.rating}</span>
+      </div>
+      <button class="fav-btn ${fav?'on':''}" data-fav="${g.id}" title="${t('addFav')}">${ICON.heart}</button>
+    </div>
+    <div class="card-body">
+      <div class="card-genre">${g.genres.map(tg).join(' · ')}</div>
+      <div class="card-title">${g.title}</div>
+      <div class="card-platforms">${platformIcons(g)}</div>
+      <div class="card-price-row">
+        <div>${renderPriceBlock(g)}</div>
+        <button class="quickview" data-open="${g.id}" title="${t('quickView')}">${ICON.eye}</button>
+      </div>
+    </div>
+  </article>`;
+}
+function renderStore(){
+  document.getElementById('storeGrid').innerHTML = GAMES.map((g,i)=>cardHTML(g,i)).join('');
+  bindCardEvents(document.getElementById('storeGrid'));
+}
+function bindCardEvents(root){
+  root.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',(e)=>{e.stopPropagation();openGame(b.dataset.open);}));
+  root.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>openGame(c.dataset.id)));
+  root.querySelectorAll('[data-fav]').forEach(b=>b.addEventListener('click',(e)=>{e.stopPropagation();toggleFavorite(b.dataset.fav);}));
+}
+
+/* =========================================================================
+   render: deals strip (with live countdown)
+   ========================================================================= */
+let dealsEndTime = Date.now() + 1000*60*60*7 + 1000*60*23; // ~7h23m demo countdown
+function renderDeals(){
+  const deals = GAMES.filter(g=>g.discount>=25).sort((a,b)=>b.discount-a.discount);
+  const el = document.getElementById('dealsStrip');
+  el.innerHTML = deals.map(g=>{
+    const cover = generateCover(g,2,420,300);
+    return `<div class="deal-card" data-id="${g.id}">
+      <div class="cover"><img src="${cover}" style="width:100%;height:100%;object-fit:cover"/><div class="deal-pct">-${g.discount}%</div></div>
+      <div class="deal-body">
+        <div class="deal-title">${g.title}</div>
+        <div class="deal-prices"><span class="price-old">$${g.price.toFixed(2)}</span><span class="price-now">$${priceOf(g).toFixed(2)}</span></div>
+        <div class="deal-timer"><span data-i18n="dealsEndsIn">${t('dealsEndsIn')}</span> <b class="deal-count">--:--:--</b></div>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.deal-card').forEach(c=>c.addEventListener('click',()=>openGame(c.dataset.id)));
+  tickDeals();
+}
+function tickDeals(){
+  const rem = Math.max(0, dealsEndTime - Date.now());
+  const hh = Math.floor(rem/3600000), mm=Math.floor(rem%3600000/60000), ss=Math.floor(rem%60000/1000);
+  const str = [hh,mm,ss].map(n=>String(n).padStart(2,'0')).join(':');
+  document.querySelectorAll('.deal-count').forEach(el=>el.textContent=str);
+}
+setInterval(tickDeals,1000);
+
+/* =========================================================================
+   search
+   ========================================================================= */
+function openSearch(){ document.getElementById('searchPanel').classList.add('open'); setTimeout(()=>document.getElementById('searchInput').focus(),60); runSearch(); }
+function closeSearch(){ document.getElementById('searchPanel').classList.remove('open'); }
+function runSearch(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const el = document.getElementById('searchResults');
+  if(!q){ el.innerHTML = GAMES.slice(0,6).map(searchRowHTML).join(''); bindSearchRows(); return; }
+  const results = GAMES.filter(g=>g.title.toLowerCase().includes(q) || g.genres.some(gg=>tg(gg).toLowerCase().includes(q)));
+  el.innerHTML = results.length? results.map(searchRowHTML).join('') : `<div class="search-empty">${t('searchEmpty')}</div>`;
+  bindSearchRows();
+}
+function runSearchByGenre(cat){
+  const el = document.getElementById('searchResults');
+  const results = GAMES.filter(g=>g.genres.includes(cat));
+  el.innerHTML = results.map(searchRowHTML).join('');
+  bindSearchRows();
+}
+function searchRowHTML(g){
+  const cover = generateCover(g,0,120,150);
+  return `<div class="search-row" data-id="${g.id}">
+    <img class="cover-mini" src="${cover}" style="object-fit:cover"/>
+    <div class="info"><div class="t">${g.title}</div><div class="g">${g.genres.map(tg).join(' · ')} · ${g.rating} ★</div></div>
+    <div class="price">${g.price===0?t('free'):('$'+priceOf(g).toFixed(2))}</div>
+  </div>`;
+}
+function bindSearchRows(){
+  document.querySelectorAll('.search-row').forEach(r=>r.addEventListener('click',()=>{closeSearch();openGame(r.dataset.id);}));
+}
+
+/* =========================================================================
+   favorites / library / cart state ops
+   ========================================================================= */
+function toggleFavorite(id){
+  if(state.favorites.has(id)){ state.favorites.delete(id); showToast(t('toastRemovedFav'),'err'); }
+  else{ state.favorites.add(id); showToast(t('toastAddedFav')); }
+  refreshFavUI();
+}
+function refreshFavUI(){
+  document.querySelectorAll('[data-fav]').forEach(b=>b.classList.toggle('on', state.favorites.has(b.dataset.fav)));
+  const badge = document.getElementById('favBadge');
+  badge.textContent = state.favorites.size; badge.classList.toggle('hidden', state.favorites.size===0);
+  if(state.page==='favorites') renderFavoritesPage();
+  if(document.getElementById('gameView').classList.contains('open')) renderBuyCard();
+}
+function addToLibrary(id, silent){
+  if(state.library.has(id)){ if(!silent) showToast(t('toastAlreadyOwned'),'err'); return; }
+  state.library.add(id); if(!silent) showToast(t('toastAddedLib'));
+  refreshLibUI();
+}
+function refreshLibUI(){
+  const badge = document.getElementById('libBadge');
+  badge.textContent = state.library.size; badge.classList.toggle('hidden', state.library.size===0);
+  if(state.page==='library') renderLibraryPage();
+  if(state.page==='profile') renderProfilePage();
+  if(document.getElementById('gameView').classList.contains('open')) renderBuyCard();
+}
+function addToCart(id){
+  if(state.cart.includes(id)) return;
+  state.cart.push(id); showToast(t('toastAddedCart')); renderCart();
+}
+function removeFromCart(id){ state.cart = state.cart.filter(x=>x!==id); renderCart(); }
+function renderCart(){
+  const badge = document.getElementById('cartBadge');
+  badge.textContent = state.cart.length; badge.classList.toggle('hidden', state.cart.length===0);
+  const itemsEl = document.getElementById('cartItems');
+  const footEl = document.getElementById('cartFoot');
+  if(state.cart.length===0){
+    itemsEl.innerHTML = `<div class="empty-state">${ICON.boxEmpty}<h3>${t('cartEmptyTitle')}</h3><p>${t('cartEmptyDesc')}</p></div>`;
+    footEl.innerHTML='';
+    return;
+  }
+  itemsEl.innerHTML = state.cart.map(id=>{
+    const g = GAMES.find(x=>x.id===id);
+    return `<div class="cart-item"><img class="cover-mini" src="${generateCover(g,0,120,150)}" style="object-fit:cover"/>
+      <div class="ci-info"><div class="ci-title">${g.title}</div><div class="ci-price">$${priceOf(g).toFixed(2)}</div></div>
+      <button class="ci-remove" data-rm="${g.id}">${ICON.close}</button></div>`;
+  }).join('');
+  const total = state.cart.reduce((s,id)=>s+priceOf(GAMES.find(x=>x.id===id)),0);
+  footEl.innerHTML = `<div class="cart-total-row"><span>${t('total')}</span><b>$${total.toFixed(2)}</b></div>
+    <button class="btn-buy" id="cartCheckoutBtn">${t('checkoutBtn')}</button>`;
+  itemsEl.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>removeFromCart(b.dataset.rm)));
+  document.getElementById('cartCheckoutBtn').addEventListener('click',()=>{closeCart();openCheckout(state.cart.slice());});
+}
+function openCart(){ document.getElementById('cartOverlay').classList.add('open'); document.getElementById('cartDrawer').classList.add('open'); document.body.classList.add('noscroll'); }
+function closeCart(){ document.getElementById('cartOverlay').classList.remove('open'); document.getElementById('cartDrawer').classList.remove('open'); document.body.classList.remove('noscroll'); }
+
+/* =========================================================================
+   page switching (home / library / favorites / profile)
+   ========================================================================= */
+function showPage(page){
+  state.page = page;
+  ['home','library','favorites','profile'].forEach(p=>{
+    const el = document.getElementById(p+'View');
+    if(el) el.classList.toggle('hidden', p!==page);
+  });
+  document.querySelectorAll('.nav-menu button').forEach(b=>b.classList.toggle('active-link', page==='home' && b.dataset.scroll==='home'));
+  window.scrollTo({top:0,behavior:'instant'in window? 'instant':'auto'});
+  if(page==='library') renderLibraryPage();
+  if(page==='favorites') renderFavoritesPage();
+  if(page==='profile') renderProfilePage();
+  closeMobileMenu();
+}
+function libRowHTML(g,owned){
+  const cover = generateCover(g,0,140,140);
+  const hrs = owned? (hashStr(g.id)%40+1) : 0;
+  const daysAgo = owned? (hashStr(g.id+'d')%14+1) : 0;
+  return `<div class="lib-row" data-id="${g.id}">
+    <img class="cover-mini" src="${cover}" style="object-fit:cover"/>
+    <div class="lib-info">
+      <div class="lib-title">${g.title}</div>
+      <div class="lib-meta"><span>${hrs} ${t('hoursPlayed')}</span><span>${t('lastPlayed')}: ${daysAgo} ${t('daysAgo')}</span></div>
+    </div>
+    <button class="play-btn" data-play="${g.id}">${ICON.play}<span data-i18n="play">${t('play')}</span></button>
+  </div>`;
+}
+function renderLibraryPage(){
+  const list = [...state.library].map(id=>GAMES.find(g=>g.id===id));
+  const el = document.getElementById('libraryList');
+  if(list.length===0){ el.innerHTML = `<div class="empty-state">${ICON.boxEmpty}<h3>${t('emptyLibTitle')}</h3><p>${t('emptyLibDesc')}</p></div>`; return; }
+  el.innerHTML = list.map(g=>libRowHTML(g,true)).join('');
+  el.querySelectorAll('[data-play]').forEach(b=>b.addEventListener('click',(e)=>{e.stopPropagation();launchDemo(b.dataset.play);}));
+  el.querySelectorAll('.lib-row').forEach(r=>r.addEventListener('click',()=>openGame(r.dataset.id)));
+}
+function renderFavoritesPage(){
+  const list = [...state.favorites].map(id=>GAMES.find(g=>g.id===id));
+  const el = document.getElementById('favoritesList');
+  if(list.length===0){ el.innerHTML = `<div class="empty-state">${ICON.heart}<h3>${t('emptyFavTitle')}</h3><p>${t('emptyFavDesc')}</p></div>`; return; }
+  el.innerHTML = `<div class="bento">${list.map((g,i)=>cardHTML(g,i)).join('')}</div>`;
+  bindCardEvents(el);
+}
+const ACHIEVEMENTS = [
+  {id:'first_purchase',icon:ICON.trophy,name:{ru:'Первая покупка',en:'First purchase',uz:'Birinchi xarid',zh:'首次购买',de:'Erster Kauf'},desc:{ru:'Купите первую игру',en:'Buy your first game',uz:'Birinchi o\'yinni sotib oling',zh:'购买第一款游戏',de:'Kaufe dein erstes Spiel'},cond:()=>state.library.size>=1},
+  {id:'collector',icon:ICON.library,name:{ru:'Коллекционер',en:'Collector',uz:'Kollektsioner',zh:'收藏家',de:'Sammler'},desc:{ru:'5 игр в библиотеке',en:'5 games in library',uz:'Kutubxonada 5 ta o\'yin',zh:'游戏库中拥有5款游戏',de:'5 Spiele in der Bibliothek'},cond:()=>state.library.size>=5},
+  {id:'curator',icon:ICON.heart,name:{ru:'Куратор вкуса',en:'Taste curator',uz:'Did kuratori',zh:'品味策展人',de:'Geschmackskurator'},desc:{ru:'3 игры в избранном',en:'3 favorited games',uz:'3 ta sevimli o\'yin',zh:'收藏3款游戏',de:'3 favorisierte Spiele'},cond:()=>state.favorites.size>=3},
+  {id:'polyglot',icon:ICON.info,name:{ru:'Полиглот',en:'Polyglot',uz:'Poliglot',zh:'语言达人',de:'Polyglott'},desc:{ru:'Смените язык интерфейса',en:'Switch the interface language',uz:'Interfeys tilini almashtiring',zh:'切换界面语言',de:'Wechsle die Sprache'},cond:()=>state._langSwitched===true},
+  {id:'window_shopper',icon:ICON.eye,name:{ru:'Витринщик',en:'Window shopper',uz:'Vitrina tomoshabini',zh:'橱窗浏览者',de:'Schaufensterbummler'},desc:{ru:'Откройте карточку игры',en:'Open a game page',uz:'O\'yin sahifasini oching',zh:'打开游戏详情页',de:'Öffne eine Spielseite'},cond:()=>state._openedGame===true},
+  {id:'bargain_hunter',icon:ICON.gamepad,name:{ru:'Охотник за скидками',en:'Bargain hunter',uz:'Chegirma ovchisi',zh:'折扣猎人',de:'Schnäppchenjäger'},desc:{ru:'Купите игру со скидкой 50%+',en:'Buy a game with 50%+ discount',uz:"50%+ chegirmali o'yin sotib oling",zh:'购买折扣50%以上的游戏',de:'Kaufe ein Spiel mit 50%+ Rabatt'},cond:()=>[...state.library].some(id=>(GAMES.find(g=>g.id===id)||{}).discount>=50)},
+  {id:'free_agent',icon:ICON.check,name:{ru:'Свободный агент',en:'Free agent',uz:'Erkin agent',zh:'自由玩家',de:'Freier Agent'},desc:{ru:'Добавьте бесплатную игру',en:'Add a free-to-play game',uz:'Bepul o\'yin qo\'shing',zh:'添加一款免费游戏',de:'Füge ein Free-to-Play-Spiel hinzu'},cond:()=>[...state.library].some(id=>(GAMES.find(g=>g.id===id)||{}).price===0)},
+  {id:'cart_master',icon:ICON.cart,name:{ru:'Мастер корзины',en:'Cart master',uz:'Savat ustasi',zh:'购物车大师',de:'Warenkorb-Meister'},desc:{ru:'Добавьте 3 игры в корзину',en:'Add 3 games to cart',uz:'Savatga 3 ta o\'yin qo\'shing',zh:'向购物车添加3款游戏',de:'Füge 3 Spiele zum Warenkorb hinzu'},cond:()=>state.cart.length>=3},
+];
+function renderProfilePage(){
+  document.getElementById('pGamesOwned').textContent = state.library.size;
+  document.getElementById('pWishlist').textContent = state.favorites.size;
+  const unlocked = ACHIEVEMENTS.filter(a=>a.cond()).length;
+  document.getElementById('pAch').textContent = unlocked+'/'+ACHIEVEMENTS.length;
+  document.getElementById('pHours').textContent = [...state.library].reduce((s,id)=>s+(hashStr(id)%40+1),0);
+  document.getElementById('achGrid').innerHTML = ACHIEVEMENTS.map(a=>{
+    const on = a.cond();
+    return `<div class="ach-card ${on?'':'locked'}"><div class="ach-icon">${on?a.icon:ICON.lock}</div>
+      <div><div class="ach-name">${a.name[currentLang]||a.name.en}</div><div class="ach-desc">${a.desc[currentLang]||a.desc.en}</div></div></div>`;
+  }).join('');
+}
+function launchDemo(id){
+  const g = GAMES.find(x=>x.id===id);
+  showToast((currentLang==='ru'?'Запуск ':currentLang==='en'?'Launching ':currentLang==='de'?'Starte ':currentLang==='zh'?'正在启动 ':'Ishga tushirilmoqda ')+g.title+'…');
+}
+
+/* =========================================================================
+   game detail view
+   ========================================================================= */
+function openGame(id){
+  const g = GAMES.find(x=>x.id===id);
+  if(!g) return;
+  state.currentGame = g; state._openedGame = true;
+  document.getElementById('gvHero').style.background = `url(${generateCover(g,0,1400,900,false)}) center/cover`;
+  document.getElementById('gvGenreTag').textContent = g.genres.map(tg).join(' · ').toUpperCase();
+  document.getElementById('gvTitle').textContent = g.title;
+  document.getElementById('gvDesc').textContent = gdesc(g);
+  document.getElementById('gvMeta').innerHTML = [
+    [t('developer'),g.dev],[t('publisher'),g.pub],[t('releaseDate'),fmtDate(g.release)],
+    [t('players'),g.players],[t('ratingLbl'),'★ '+g.rating+' / 5'],[t('platforms'),g.platforms.map(p=>p.toUpperCase()).join(' · ')],
+  ].map(([l,v])=>`<div class="gv-meta-item"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  document.getElementById('gvGallery').innerHTML = [1,2,3,4].map(i=>
+    `<div class="shot" data-idx="${i-1}"><img src="${generateCover(g,i+2,480,270,false)}" style="width:100%;height:100%;object-fit:cover"/></div>`
+  ).join('');
+  document.getElementById('gvGallery').querySelectorAll('.shot').forEach(s=>s.addEventListener('click',()=>openShotModal(g,+s.dataset.idx)));
+  document.getElementById('gvSysreq').innerHTML = sysReqHTML(g);
+  document.getElementById('gvTrailerBtn').onclick = ()=>openTrailerModal(g);
+  renderBuyCard();
+  document.getElementById('gameView').classList.add('open');
+  document.body.classList.add('noscroll');
+  window.scrollTo(0,0);
+  if(document.getElementById('gameView')) document.getElementById('gameView').scrollTop = 0;
+}
+function closeGame(){ document.getElementById('gameView').classList.remove('open'); document.body.classList.remove('noscroll'); }
+function sysReqHTML(g){
+  const specs = {
+    min:{os:'Windows 10 64-bit',cpu:'Intel Core i5-8400 / AMD Ryzen 5 2600',gpu:'GTX 1060 6GB / RX 580 8GB',ram:'8 GB',storage:'70 GB SSD'},
+    rec:{os:'Windows 11 64-bit',cpu:'Intel Core i7-10700K / AMD Ryzen 7 3800X',gpu:'RTX 3070 / RX 6800 XT',ram:'16 GB',storage:'70 GB NVMe SSD'}
+  };
+  const row = (k,v)=>`<li><b>${t(k)}</b>${v}</li>`;
+  return `<div><h4>${t('minimum')}</h4><ul>${row('os',specs.min.os)}${row('cpu',specs.min.cpu)}${row('gpu',specs.min.gpu)}${row('ram',specs.min.ram)}${row('storage',specs.min.storage)}</ul></div>
+          <div><h4>${t('recommended')}</h4><ul>${row('os',specs.rec.os)}${row('cpu',specs.rec.cpu)}${row('gpu',specs.rec.gpu)}${row('ram',specs.rec.ram)}${row('storage',specs.rec.storage)}</ul></div>`;
+}
+function renderBuyCard(){
+  const g = state.currentGame; if(!g) return;
+  const owned = state.library.has(g.id);
+  const fav = state.favorites.has(g.id);
+  const inCart = state.cart.includes(g.id);
+  let priceBlock = '';
+  if(g.price===0){
+    priceBlock = `<div class="buy-price-row"><span class="buy-new">${t('free')}</span></div>`;
+  } else if(g.discount>0){
+    priceBlock = `<div class="buy-price-row"><span class="buy-new">$${priceOf(g).toFixed(2)}</span><span class="buy-old">$${g.price.toFixed(2)}</span></div><div class="buy-disc">-${g.discount}%</div>`;
+  } else {
+    priceBlock = `<div class="buy-price-row"><span class="buy-new">$${g.price.toFixed(2)}</span></div><div style="height:14px"></div>`;
+  }
+  document.getElementById('gvBuyCard').innerHTML = `
+    ${priceBlock}
+    <div class="buy-demo-note">${t('demoNote')}</div>
+    <button class="btn-buy ${owned?'owned':''}" id="buyBtn" ${owned?'disabled':''}>
+      ${owned? t('inLib') : (g.price===0? t('playFree') : t('buyNow'))}
+    </button>
+    ${!owned && g.price>0 ? `<button class="btn-sec" id="addCartBtn">${ICON.cart} ${inCart? t('toastAddedCart') : t('addToCart')}</button>`:''}
+    <button class="btn-sec ${fav?'on':''}" id="favBtnDetail">${ICON.heart} ${fav? t('removeFav') : t('addFav')}</button>
+    <div class="buy-plat-row">${platformIcons(g)}</div>
+  `;
+  document.getElementById('buyBtn').addEventListener('click',()=>{
+    if(owned) return;
+    if(g.price===0){ addToLibrary(g.id); launchDemo(g.id); return; }
+    openCheckout([g.id]);
+  });
+  const cartBtn = document.getElementById('addCartBtn');
+  if(cartBtn) cartBtn.addEventListener('click',()=>addToCart(g.id));
+  document.getElementById('favBtnDetail').addEventListener('click',()=>toggleFavorite(g.id));
+}
+
+/* screenshot fullscreen preview */
+function openShotModal(g, idx){
+  state.currentShot = idx;
+  const shots = [0,1,2,3];
+  document.getElementById('shotModalImg').src = generateCover(g, idx+3, 1280, 720, false);
+  document.getElementById('shotModal').classList.add('open');
+  document.getElementById('shotPrev').onclick = ()=>{ state.currentShot=(state.currentShot+3)%4; document.getElementById('shotModalImg').src = generateCover(g,state.currentShot+3,1280,720,false); };
+  document.getElementById('shotNext').onclick = ()=>{ state.currentShot=(state.currentShot+1)%4; document.getElementById('shotModalImg').src = generateCover(g,state.currentShot+3,1280,720,false); };
+}
+function closeShotModal(){ document.getElementById('shotModal').classList.remove('open'); }
+
+/* trailer modal (demo placeholder player) */
+function openTrailerModal(g){
+  document.getElementById('trailerFakeText').textContent = g.title.toUpperCase()+' — '+t('watchTrailer');
+  document.getElementById('trailerModal').classList.add('open');
+}
+function closeTrailerModal(){ document.getElementById('trailerModal').classList.remove('open'); }
+
+/* =========================================================================
+   checkout flow (demo)
+   ========================================================================= */
+function openCheckout(ids){
+  const items = ids.map(id=>GAMES.find(g=>g.id===id));
+  const total = items.reduce((s,g)=>s+priceOf(g),0);
+  document.getElementById('checkoutBox').innerHTML = `
+    <button class="modal-close" id="coClose">${ICON.close}</button>
+    <div id="coForm">
+      <h3>${t('checkoutTitle')}</h3>
+      <div class="sub">${t('checkoutSub')}</div>
+      <div class="demo-flag">${ICON.info}<span>${t('demoFlag')}</span></div>
+      <div class="co-field"><label>${t('email')}</label><input type="email" placeholder="you@example.com" value="player@vertex.game"/></div>
+      <div class="co-field"><label>${t('cardNumber')}</label><input inputmode="numeric" placeholder="4242 4242 4242 4242" maxlength="19"/></div>
+      <div class="co-row2">
+        <div class="co-field"><label>${t('expiry')}</label><input placeholder="MM / YY" maxlength="7"/></div>
+        <div class="co-field"><label>${t('cvv')}</label><input placeholder="123" maxlength="3"/></div>
+      </div>
+      <div class="co-total"><span>${t('total')}</span><b>$${total.toFixed(2)}</b></div>
+      <button class="btn-buy" id="coPay"><span id="coPayLabel">${t('payNow')}</span><div class="co-loading" id="coLoading"><div class="spinner"></div><span>${t('processing')}</span></div></button>
+    </div>
+    <div class="co-success hidden" id="coSuccess">
+      ${ICON.check}
+      <h3>${t('successTitle')}</h3>
+      <div class="sub">${t('successDesc')}</div>
+      <button class="btn-buy" id="coDone">${t('close')}</button>
+    </div>
+  `;
+  document.getElementById('checkoutModal').classList.add('open');
+  document.body.classList.add('noscroll');
+  document.getElementById('coClose').addEventListener('click',closeCheckout);
+  document.getElementById('coPay').addEventListener('click',()=>{
+    document.getElementById('coPayLabel').style.display='none';
+    document.getElementById('coLoading').style.display='flex';
+    setTimeout(()=>{
+      ids.forEach(id=>addToLibrary(id,true));
+      state.cart = state.cart.filter(id=>!ids.includes(id)); renderCart();
+      document.getElementById('coForm').classList.add('hidden');
+      document.getElementById('coSuccess').classList.remove('hidden');
+      showToast(t('toastPurchaseSuccess'));
+    }, 1200);
+  });
+  document.getElementById('coDone').addEventListener('click',closeCheckout);
+}
+function closeCheckout(){ document.getElementById('checkoutModal').classList.remove('open'); document.body.classList.remove('noscroll'); }
+
+/* =========================================================================
+   toasts
+   ========================================================================= */
+function showToast(msg, kind){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast'+(kind==='err'?' err':'');
+  el.innerHTML = `${kind==='err'?ICON.close:ICON.check}<span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),320); }, 3200);
+}
+
+/* =========================================================================
+   3D interactive cube — Three.js
+   ========================================================================= */
+const CUBE_FACE_GAMES = ['cyberpunk2077','rdr2','witcher3','eldenring','godofwar','milesmorales'];
+let cubeCtx = null;
+function initCube(){
+  const canvas = document.getElementById('cubeCanvas');
+  const stage = canvas.parentElement;
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  camera.position.set(0,0,6.4);
+
+  const amb = new THREE.AmbientLight(0xffffff, .75); scene.add(amb);
+  const key = new THREE.DirectionalLight(0xffffff, .9); key.position.set(3,4,5); scene.add(key);
+  const rimR = new THREE.PointLight(0xe5092f, 3, 12); rimR.position.set(-3,1,3); scene.add(rimR);
+  const rimB = new THREE.PointLight(0x0066ff, 3, 12); rimB.position.set(3,-1,-2); scene.add(rimB);
+
+  const group = new THREE.Group(); scene.add(group);
+
+  const loader = new THREE.TextureLoader();
+  const materials = CUBE_FACE_GAMES.map(id=>{
+    const g = GAMES.find(x=>x.id===id);
+    const tex = loader.load(generateCover(g,0,512,512));
+    tex.colorSpace = THREE.SRGBColorSpace || tex.colorSpace;
+    return new THREE.MeshStandardMaterial({map:tex, roughness:.55, metalness:.15});
+  });
+  const geo = new THREE.BoxGeometry(2.6,2.6,2.6);
+  const cube = new THREE.Mesh(geo, materials);
+  group.add(cube);
+
+  // RGB split edge outlines
+  const edges = new THREE.EdgesGeometry(geo);
+  const edgeR = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color:0xe5092f, transparent:true, opacity:.85}));
+  edgeR.position.set(.02,.02,0); group.add(edgeR);
+  const edgeB = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color:0x0066ff, transparent:true, opacity:.85}));
+  edgeB.position.set(-.02,-.02,0); group.add(edgeB);
+
+  function resize(){
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w,h,false);
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+  }
+  resize(); window.addEventListener('resize', resize);
+
+  // drag rotation with inertia
+  let dragging=false, lastX=0, lastY=0, velX=0, velY=0, idleT=0;
+  const raycaster = new THREE.Raycaster(); const mouseN = new THREE.Vector2();
+  const faceLabel = document.getElementById('cubeLabel');
+
+  function pointerDown(x,y){ dragging=true; lastX=x; lastY=y; velX=0; velY=0; idleT=0; canvas.style.cursor='grabbing'; }
+  function pointerMove(x,y, clientRect){
+    if(dragging){
+      const dx = x-lastX, dy = y-lastY;
+      group.rotation.y += dx*0.008;
+      group.rotation.x += dy*0.008;
+      group.rotation.x = Math.max(-1.3, Math.min(1.3, group.rotation.x));
+      velX = dx*0.008; velY = dy*0.008;
+      lastX=x; lastY=y;
+    }
+    if(clientRect){
+      mouseN.x = ((x-clientRect.left)/clientRect.width)*2-1;
+      mouseN.y = -((y-clientRect.top)/clientRect.height)*2+1;
+      raycaster.setFromCamera(mouseN, camera);
+      const hit = raycaster.intersectObject(cube)[0];
+      if(hit && hit.face){
+        const id = CUBE_FACE_GAMES[Math.floor(hit.face.materialIndex)];
+        const g = GAMES.find(x=>x.id===id);
+        faceLabel.textContent = g.title; faceLabel.classList.add('show');
+      } else { faceLabel.classList.remove('show'); }
+    }
+  }
+  function pointerUp(){ dragging=false; canvas.style.cursor='grab'; }
+
+  canvas.addEventListener('mousedown', e=>pointerDown(e.clientX,e.clientY));
+  window.addEventListener('mousemove', e=>pointerMove(e.clientX,e.clientY, canvas.getBoundingClientRect()));
+  window.addEventListener('mouseup', pointerUp);
+  canvas.addEventListener('mouseleave', ()=>{ if(!dragging) faceLabel.classList.remove('show'); });
+  canvas.addEventListener('touchstart', e=>{ const tt=e.touches[0]; pointerDown(tt.clientX,tt.clientY); }, {passive:true});
+  canvas.addEventListener('touchmove', e=>{ const tt=e.touches[0]; pointerMove(tt.clientX,tt.clientY, canvas.getBoundingClientRect()); }, {passive:true});
+  canvas.addEventListener('touchend', pointerUp);
+
+  let introDone = false;
+  cubeCtx = { setIntroSpin(v){ introDone = !v; } };
+
+  function animate(){
+    requestAnimationFrame(animate);
+    if(!dragging){
+      idleT += 1;
+      velX *= 0.94; velY *= 0.94;
+      group.rotation.y += velX; group.rotation.x += velY;
+      if(Math.abs(velX)<0.0004 && Math.abs(velY)<0.0004){
+        group.rotation.y += 0.0022; // gentle idle autorotation
+      }
+    }
+    edgeR.rotation.copy(cube.rotation); edgeB.rotation.copy(cube.rotation);
+    rimR.position.x = Math.sin(Date.now()*0.0003)*4;
+    rimB.position.x = -Math.sin(Date.now()*0.00034)*4;
+    renderer.render(scene, camera);
+  }
+  animate();
+  return { group };
+}
+
+/* =========================================================================
+   scroll reveal
+   ========================================================================= */
+function initReveal(){
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, {threshold:.15});
+  document.querySelectorAll('.reveal,.reveal-l,.reveal-scale').forEach(el=>io.observe(el));
+}
+
+/* =========================================================================
+   custom cursor
+   ========================================================================= */
+function initCursor(){
+  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  const dot = document.getElementById('cursorDot'), ring = document.getElementById('cursorRing');
+  let rx=0,ry=0,mx=0,my=0;
+  window.addEventListener('mousemove', e=>{
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+'px'; dot.style.top=my+'px';
+    const target = e.target.closest('button,a,.card,.cat-cell,.deal-card,.lib-row,input,.search-row');
+    dot.classList.toggle('active', !!target);
+    ring.classList.toggle('active', !!target);
+  });
+  function loop(){ rx += (mx-rx)*.18; ry += (my-ry)*.18; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(loop); }
+  loop();
+}
+
+/* =========================================================================
+   i18n apply
+   ========================================================================= */
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(T[key]) el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-placeholder');
+    if(T[key]) el.placeholder = t(key);
+  });
+  document.querySelectorAll('[data-cat-label]').forEach(el=>{ el.textContent = tg(el.getAttribute('data-cat-label')); });
+  document.getElementById('langCode').textContent = currentLang.toUpperCase();
+  document.documentElement.lang = currentLang;
+  buildLangMenu();
+  renderCategories(); renderStore(); renderDeals();
+  if(state.page==='library') renderLibraryPage();
+  if(state.page==='favorites') renderFavoritesPage();
+  if(state.page==='profile') renderProfilePage();
+  if(document.getElementById('gameView').classList.contains('open') && state.currentGame) openGame(state.currentGame.id);
+  if(document.getElementById('cartDrawer').classList.contains('open') || state.cart.length) renderCart();
+  runSearch();
+}
+function buildLangMenu(){
+  const menu = document.getElementById('langMenu');
+  menu.innerHTML = LANGS.map(l=>`<button data-lang="${l}" class="${l===currentLang?'on':''}"><span>${LANG_LABEL[l]}</span><span class="lang-code">${l.toUpperCase()}</span></button>`).join('');
+  menu.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+  const footerRow = document.getElementById('footerLangRow');
+  if(footerRow) footerRow.innerHTML = LANGS.map(l=>`<button data-lang2="${l}" class="${l===currentLang?'on':''}">${l.toUpperCase()}</button>`).join('');
+  document.querySelectorAll('[data-lang2]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang2)));
+  const mmRow = document.getElementById('mmLangRow');
+  if(mmRow) mmRow.innerHTML = LANGS.map(l=>`<button data-lang3="${l}" class="${l===currentLang?'on':''}">${l.toUpperCase()}</button>`).join('');
+  document.querySelectorAll('[data-lang3]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang3)));
+}
+function setLang(l){
+  if(l===currentLang) return;
+  currentLang = l; state._langSwitched = true;
+  document.getElementById('langMenu').classList.remove('open');
+  applyI18n();
+}
+
+/* =========================================================================
+   global event bindings
+   ========================================================================= */
+function bindGlobalEvents(){
+  document.getElementById('btnSearch').addEventListener('click', openSearch);
+  document.getElementById('searchCloseBtn').addEventListener('click', closeSearch);
+  document.getElementById('searchInput').addEventListener('input', runSearch);
+  document.getElementById('btnFav').addEventListener('click', ()=>showPage('favorites'));
+  document.getElementById('btnLib').addEventListener('click', ()=>showPage('library'));
+  document.getElementById('btnProfile').addEventListener('click', ()=>showPage('profile'));
+  document.getElementById('mmFav').addEventListener('click', ()=>showPage('favorites'));
+  document.getElementById('mmLib').addEventListener('click', ()=>showPage('library'));
+  document.getElementById('mmProfile').addEventListener('click', ()=>showPage('profile'));
+  document.getElementById('btnCart').addEventListener('click', openCart);
+  document.getElementById('cartCloseBtn').addEventListener('click', closeCart);
+  document.getElementById('cartOverlay').addEventListener('click', closeCart);
+  document.getElementById('langBtn').addEventListener('click', ()=>document.getElementById('langMenu').classList.toggle('open'));
+  document.addEventListener('click', (e)=>{ if(!e.target.closest('.lang-switch')) document.getElementById('langMenu').classList.remove('open'); });
+  document.getElementById('btnBurger').addEventListener('click', ()=>document.getElementById('mobileMenu').classList.toggle('open'));
+  document.getElementById('gvClose').addEventListener('click', closeGame);
+  document.getElementById('gvBack').addEventListener('click', closeGame);
+  document.getElementById('shotModalClose').addEventListener('click', closeShotModal);
+  document.getElementById('shotModal').addEventListener('click', (e)=>{ if(e.target.id==='shotModal') closeShotModal(); });
+  document.getElementById('trailerModalClose').addEventListener('click', closeTrailerModal);
+  document.getElementById('trailerModal').addEventListener('click', (e)=>{ if(e.target.id==='trailerModal') closeTrailerModal(); });
+  document.getElementById('checkoutModal').addEventListener('click', (e)=>{ if(e.target.id==='checkoutModal') closeCheckout(); });
+  document.querySelectorAll('[data-scroll]').forEach(b=>b.addEventListener('click', ()=>{
+    const target = b.dataset.scroll;
+    if(state.page!=='home'){ showPage('home'); setTimeout(()=>scrollToSection(target),50); }
+    else scrollToSection(target);
+    closeMobileMenu();
+  }));
+  window.addEventListener('scroll', ()=>{
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY>40);
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='Escape'){ closeSearch(); closeGame(); closeCart(); closeShotModal(); closeTrailerModal(); closeCheckout(); closeMobileMenu(); }
+  });
+}
+function scrollToSection(id){
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function closeMobileMenu(){ document.getElementById('mobileMenu').classList.remove('open'); }
+
+/* =========================================================================
+   intro sequence
+   ========================================================================= */
+function playIntro(onDone){
+  const tl = gsap.timeline({onComplete:onDone});
+  tl.to('#intro .line-r', {opacity:1, duration:.25, delay:.3})
+    .to('#intro .line-r', {scaleX:1.02, duration:.15, x:'+=4', yoyo:true, repeat:1})
+    .to('#intro .line-b', {opacity:1, duration:.25}, '-=.2')
+    .to('#intro .icube', {opacity:1, scale:1, rotate:0, duration:.7, ease:'power3.out'}, '-=.1')
+    .to('#intro .line-r,#intro .line-b', {opacity:0, duration:.3}, '-=.2')
+    .to('#intro .ilogo', {opacity:1, duration:.5})
+    .to('#intro .itag', {opacity:1, duration:.4}, '-=.2')
+    .to('#intro .icube', {rotate:360, duration:.8, ease:'power1.inOut'}, '-=.6')
+    .to('#intro', {opacity:0, duration:.6, pointerEvents:'none'}, '+=.35')
+    .set('#intro', {display:'none'});
+}
+function playPageStagger(){
+  gsap.timeline()
+    .to('header#nav', {opacity:1, y:0, duration:.6, ease:'power2.out'})
+    .fromTo('.hero-eyebrow', {opacity:0,x:-20},{opacity:1,x:0,duration:.5}, '-=.2')
+    .fromTo('.hero h1', {opacity:0,y:24},{opacity:1,y:0,duration:.6}, '-=.3')
+    .fromTo('.hero-desc', {opacity:0,y:16},{opacity:1,y:0,duration:.5}, '-=.35')
+    .fromTo('.hero-cta-row', {opacity:0,y:16},{opacity:1,y:0,duration:.5}, '-=.35')
+    .fromTo('.hero-stats', {opacity:0,y:16},{opacity:1,y:0,duration:.5}, '-=.3')
+    .fromTo('.cube-stage', {opacity:0,scale:.85},{opacity:1,scale:1,duration:.8,ease:'power3.out'}, '-=.9');
+}
+
+/* =========================================================================
+   init
+   ========================================================================= */
+document.addEventListener('DOMContentLoaded', ()=>{
+  buildRoot();
+  gsap.set('header#nav', {opacity:0, y:-16});
+  gsap.set('.hero-eyebrow,.hero h1,.hero-desc,.hero-cta-row,.hero-stats,.cube-stage', {opacity:0});
+  renderCategories(); renderStore(); renderDeals();
+  refreshFavUI(); refreshLibUI(); renderCart();
+  buildLangMenu();
+  bindGlobalEvents();
+  initCube();
+  initReveal();
+  initCursor();
+  playIntro(()=>{ playPageStagger(); });
+});
+</script>
+</body>
+</html>
